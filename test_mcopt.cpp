@@ -25,7 +25,7 @@ TEST_CASE("Calculated deviations are correct", "[deviations]")
 
     SECTION("Add a constant to column 0")
     {
-        const double c = 10;
+        const double c = 100;
         arma::mat B = A;
         B.col(0) += c;
         arma::mat devs = findDeviations(A, B);
@@ -41,7 +41,7 @@ TEST_CASE("Calculated deviations are correct", "[deviations]")
 
     SECTION("Add a constant to column 1")
     {
-        const double c = 10;
+        const double c = 100;
         arma::mat B = A;
         B.col(1) += c;
         arma::mat devs = findDeviations(A, B);
