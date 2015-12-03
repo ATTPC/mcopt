@@ -23,6 +23,18 @@ static inline double betaFactor(const double en, const double massNum)
     return (sqrt(en)*sqrt(en + 2*P_MC2*massNum)) / (en + massNum*P_MC2);
 }
 
+void Track::append(const double x, const double y, const double z, const double time,
+                   const double enu, const double azi, const double pol)
+{
+    arma::rowvec newRow {x, y, z, time, enu, azi, pol};
+    data.insert_rows(data.n_rows, newRow);
+}
+
+const arma::mat& Track::getMatrix() const
+{
+    return data;
+}
+
 void MCminimizer::updateState(State& st, const double tstep) const
 {
     return updateState(st, tstep, this->bfield);
@@ -122,13 +134,7 @@ Track MCminimizer::trackParticle(const double x0, const double y0, const double 
     st.en = en0;
     st.de = 0;
 
-    tr.x.push_back(st.pos(0));
-    tr.y.push_back(st.pos(1));
-    tr.z.push_back(st.pos(2));
-    tr.time.push_back(current_time);
-    tr.enu.push_back(st.en / massNum);
-    tr.azi.push_back(azi0);
-    tr.pol.push_back(pol0);
+    tr.append(st.pos(0), st.pos(1), st.pos(2), current_time, st.en / massNum, azi0, pol0);
 
     for (unsigned long i = 1; i < maxIters; i++) {
         double beta = betaFactor(st.en, massNum);
@@ -144,30 +150,13 @@ Track MCminimizer::trackParticle(const double x0, const double y0, const double 
 
         current_time += tstep;
 
-        tr.x.push_back(st.pos(0));
-        tr.y.push_back(st.pos(1));
-        tr.z.push_back(st.pos(2));
-        tr.time.push_back(current_time);
-        tr.enu.push_back(st.en / massNum);
-        tr.azi.push_back(azi);
-        tr.pol.push_back(pol);
+        tr.append(st.pos(0), st.pos(1), st.pos(2), current_time, st.en / massNum, azi, pol);
 
         // double rad = arma::norm(st.pos);
         // if (st.pos(2) < 0 || st.pos(2) > 1 || rad > 0.275) {
         //     break;
         // }
     }
-
-    #ifndef NDEBUG
-        const size_t N = tr.x.size();
-        assert(tr.x.size() == N);
-        assert(tr.y.size() == N);
-        assert(tr.z.size() == N);
-        assert(tr.time.size() == N);
-        assert(tr.enu.size() == N);
-        assert(tr.azi.size() == N);
-        assert(tr.pol.size() == N);
-    #endif
 
     return tr;
 }
@@ -190,10 +179,7 @@ double MCminimizer::runTrack(const arma::vec& p, const arma::mat& trueValues) co
     arma::vec3 thisBfield = {0, 0, p(6)};
 
     Track tr = trackParticle(p(0), p(1), p(2), p(3), p(4), p(5), thisBfield);
-    arma::vec xv (tr.x);
-    arma::vec yv (tr.y);
-    arma::vec zv (tr.z);
-    arma::mat simtrack = arma::join_horiz(xv, arma::join_horiz(yv, zv));
+    const arma::mat simtrack = tr.getMatrix();
 
     double zlenSim = simtrack.col(2).max() - simtrack.col(2).min();
     double zlenTrue = trueValues.col(2).max() - trueValues.col(2).min();

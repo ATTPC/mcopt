@@ -21,17 +21,18 @@ public:
         : pos(pos), mom(mom), en(en), de(de) {}
 };
 
-struct Track
+class Track
 {
-    std::vector<double> x;
-    std::vector<double> y;
-    std::vector<double> z;
-    std::vector<double> time;
-    std::vector<double> enu;
-    std::vector<double> azi;
-    std::vector<double> pol;
+public:
+    Track() : data(arma::mat(1, 7)) {}
+    void append(const double x, const double y, const double z, const double time,
+                const double enu, const double azi, const double pol);
+
+    const arma::mat& getMatrix() const;
+
+private:
+    arma::mat data;
 };
-typedef struct Track Track;
 
 typedef std::tuple<arma::vec, arma::mat, arma::vec, arma::vec> MCminimizeResult;
 
@@ -64,7 +65,6 @@ private:
     std::vector<double> eloss;
     arma::vec3 efield;
     arma::vec3 bfield;
-
 };
 
 class TrackingFailed : public std::exception
