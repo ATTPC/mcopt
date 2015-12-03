@@ -189,7 +189,7 @@ double runTrack(const arma::vec& p, const arma::mat& trueValues,
     double zlenTrue = trueValues.col(2).max() - trueValues.col(2).min();
 
     double chi2 = 0;
-    if (simtrack.n_rows > 10 and std::abs(zlenSim - zlenTrue) < 1e-2) {
+    if (simtrack.n_rows > 10 and std::abs(zlenSim - zlenTrue) < 0.5) {
         arma::mat devs = findDeviations(simtrack, trueValues);
         arma::vec temp = arma::sum(arma::square(devs), 1);
         chi2 = arma::median(temp);
