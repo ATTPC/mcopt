@@ -56,7 +56,7 @@ void updateState(State& st, const Conditions& cond, const double tstep)
     try {
         stopping = cond.eloss.at(elossIdx);
     }
-    catch (const std::out_of_range) {
+    catch (const std::out_of_range&) {
         throw TrackingFailed("Energy loss index out of range.");
     }
     double dpos = tstep * beta * C_LGT;
@@ -241,7 +241,14 @@ MCminimizeResult MCminimize(const arma::vec& ctr0, const arma::vec& sigma0,
         #pragma omp parallel for schedule(static)
         for (unsigned j = 0; j < numPts; j++) {
             arma::vec p = arma::conv_to<arma::colvec>::from(params.row(j));
-            chi2s(j) = runTrack(p, trueValues, cond);
+            double chi2;
+            try {
+                chi2 = runTrack(p, trueValues, cond);
+            }
+            catch (const std::exception&) {
+                chi2 = arma::datum::nan;
+            }
+            chi2s(j) = chi2;
         }
 
         arma::uword minChiLoc = 0;
