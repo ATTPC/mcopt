@@ -7,24 +7,19 @@
 #include <string>
 #include <tuple>
 
-struct State
+class State
 {
+public:
     arma::vec::fixed<3> pos;
     arma::vec::fixed<3> mom;
     double en;
     double de;
-};
-typedef struct State State;
 
-struct Conditions
-{
-    double massNum;
-    double chargeNum;
-    std::vector<double> eloss;
-    arma::vec::fixed<3> efield;
-    arma::vec::fixed<3> bfield;
+    State()
+        : pos(arma::zeros<arma::vec>(3)), mom(arma::zeros<arma::vec>(3)), en(0), de(0) {}
+    State(const arma::vec3& pos, const arma::vec3& mom, const double en, const double de)
+        : pos(pos), mom(mom), en(en), de(de) {}
 };
-typedef struct Conditions Conditions;
 
 struct Track
 {
@@ -38,6 +33,40 @@ struct Track
 };
 typedef struct Track Track;
 
+typedef std::tuple<arma::vec, arma::mat, arma::vec, arma::vec> MCminimizeResult;
+
+class MCminimizer
+{
+public:
+    MCminimizer(const unsigned massNum, const unsigned chargeNum, const std::vector<double>& eloss,
+                const arma::vec3& efield, const arma::vec3& bfield)
+        : massNum(massNum), chargeNum(chargeNum), eloss(eloss), efield(efield), bfield(bfield) {}
+
+    Track trackParticle(const double x0, const double y0, const double z0,
+                        const double enu0,  const double azi0, const double pol0) const;
+    Track trackParticle(const double x0, const double y0, const double z0,
+                        const double enu0,  const double azi0, const double pol0,
+                        const arma::vec3& bfield) const;
+
+    static arma::mat makeParams(const arma::vec& ctr, const arma::vec& sigma, const unsigned numSets,
+                                const arma::vec& mins, const arma::vec& maxes);
+    static arma::mat findDeviations(const arma::mat& simtrack, const arma::mat& expdata);
+    double runTrack(const arma::vec& p, const arma::mat& trueValues) const;
+    MCminimizeResult minimize(const arma::vec& ctr0, const arma::vec& sigma0, const arma::mat& trueValues,
+                              const unsigned numIters, const unsigned numPts, const double redFactor) const;
+
+private:
+    void updateState(State& st, const double tstep) const;
+    void updateState(State& st, const double tstep, const arma::vec3& thisBfield) const;
+
+    unsigned int massNum;
+    unsigned int chargeNum;
+    std::vector<double> eloss;
+    arma::vec3 efield;
+    arma::vec3 bfield;
+
+};
+
 class TrackingFailed : public std::exception
 {
 public:
@@ -47,19 +76,5 @@ public:
 private:
     std::string msg;
 };
-
-typedef std::tuple<arma::vec, arma::mat, arma::vec, arma::vec> MCminimizeResult;
-
-void updateState(State& st, const Conditions& cond, const double tstep);
-Track trackParticle(const double x0, const double y0, const double z0,
-                    const double enu0,  const double azi0, const double pol0, const Conditions& cond);
-arma::mat makeParams(const arma::vec ctr, const arma::vec sigma, const unsigned numSets,
-                     const arma::vec mins, const arma::vec maxes);
-double runTrack(const arma::vec& p, const arma::mat& trueValues, const Conditions& condBase);
-arma::mat findDeviations(const arma::mat& simtrack, const arma::mat& expdata);
-MCminimizeResult MCminimize(const arma::vec& ctr0, const arma::vec& sigma0,
-                            const arma::mat& trueValues, const Conditions& cond,
-                            const unsigned numIters, const unsigned numPts,
-                            const double redFactor);
 
 #endif /* def MCOPT_H */

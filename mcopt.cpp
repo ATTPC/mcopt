@@ -23,11 +23,16 @@ static inline double betaFactor(const double en, const double massNum)
     return (sqrt(en)*sqrt(en + 2*P_MC2*massNum)) / (en + massNum*P_MC2);
 }
 
-void updateState(State& st, const Conditions& cond, const double tstep)
+void MCminimizer::updateState(State& st, const double tstep) const
+{
+    return updateState(st, tstep, this->bfield);
+}
+
+void MCminimizer::updateState(State& st, const double tstep, const arma::vec3& bfield) const
 {
     arma::vec3 mom_si = st.mom * 1e6 * E_CHG / C_LGT;
 
-    double beta = betaFactor(st.en, cond.massNum);
+    double beta = betaFactor(st.en, massNum);
     if (beta < 1e-8) {
         st.pos = {0, 0, 0};
         st.mom = {0, 0, 0};
@@ -38,15 +43,15 @@ void updateState(State& st, const Conditions& cond, const double tstep)
 
     double gamma = 1 / sqrt(1 - beta*beta);
 
-    arma::vec3 vel = mom_si / (gamma * cond.massNum * P_KG);
-    arma::vec3 force = cond.chargeNum * E_CHG * (cond.efield + arma::cross(vel, cond.bfield));
+    arma::vec3 vel = mom_si / (gamma * massNum * P_KG);
+    arma::vec3 force = chargeNum * E_CHG * (efield + arma::cross(vel, bfield));
 
     arma::vec3 new_mom_si = mom_si + force * tstep;
     arma::vec3 new_mom = new_mom_si * 1e-6 / E_CHG * C_LGT;
 
     // NOTE: I'm assuming the Lorentz force doesn't change the energy appreciably.
 
-    arma::vec3 new_vel = new_mom_si / (gamma * cond.massNum * P_KG);
+    arma::vec3 new_vel = new_mom_si / (gamma * massNum * P_KG);
     arma::vec3 new_pos = st.pos + vel * tstep;
 
     assert(st.en >= 0);  // This is assumed by the cast to unsigned long in the next line.
@@ -54,7 +59,7 @@ void updateState(State& st, const Conditions& cond, const double tstep)
 
     double stopping;
     try {
-        stopping = cond.eloss.at(elossIdx);
+        stopping = eloss.at(elossIdx);
     }
     catch (const std::out_of_range&) {
         throw TrackingFailed("Energy loss index out of range.");
@@ -74,7 +79,7 @@ void updateState(State& st, const Conditions& cond, const double tstep)
         double en = threshold(st.en - de, 0);
         assert(en >= 0);
 
-        double new_mom_mag = sqrt(pow(en + cond.massNum*P_MC2, 2) - pow(cond.massNum*P_MC2, 2));
+        double new_mom_mag = sqrt(pow(en + massNum*P_MC2, 2) - pow(massNum*P_MC2, 2));
         double old_mom_mag = arma::norm(new_mom);  // "old" means before eloss, in this case
         double mom_correction_factor = new_mom_mag / old_mom_mag;
 
@@ -89,18 +94,25 @@ void updateState(State& st, const Conditions& cond, const double tstep)
     }
 }
 
-Track trackParticle(const double x0, const double y0, const double z0,
-                    const double enu0,  const double azi0, const double pol0, const Conditions& cond)
+Track MCminimizer::trackParticle(const double x0, const double y0, const double z0,
+                                 const double enu0,  const double azi0, const double pol0) const
+{
+    return trackParticle(x0, y0, z0, enu0, azi0, pol0, this->bfield);
+}
+
+Track MCminimizer::trackParticle(const double x0, const double y0, const double z0,
+                                 const double enu0,  const double azi0, const double pol0,
+                                 const arma::vec3& bfield) const
 {
     const unsigned long maxIters = 10000;
 
     Track tr;
     State st;
 
-    const double en0 = enu0 * cond.massNum;
+    const double en0 = enu0 * massNum;
     double current_time = 0;
 
-    double mom_mag = sqrt(pow(en0 + cond.massNum*P_MC2, 2) - pow(cond.massNum*P_MC2, 2));
+    double mom_mag = sqrt(pow(en0 + massNum*P_MC2, 2) - pow(massNum*P_MC2, 2));
     arma::vec::fixed<3> mom = {mom_mag * cos(azi0) * sin(pol0),
                                mom_mag * sin(azi0) * sin(pol0),
                                mom_mag * cos(pol0)};
@@ -114,18 +126,18 @@ Track trackParticle(const double x0, const double y0, const double z0,
     tr.y.push_back(st.pos(1));
     tr.z.push_back(st.pos(2));
     tr.time.push_back(current_time);
-    tr.enu.push_back(st.en / cond.massNum);
+    tr.enu.push_back(st.en / massNum);
     tr.azi.push_back(azi0);
     tr.pol.push_back(pol0);
 
     for (unsigned long i = 1; i < maxIters; i++) {
-        double beta = betaFactor(st.en, cond.massNum);
+        double beta = betaFactor(st.en, massNum);
         if (st.en < 1e-3 || beta < 1e-6) {
             break;
         }
         double tstep = POS_STEP / (beta * C_LGT);
 
-        updateState(st, cond, tstep);
+        updateState(st, tstep, bfield);
 
         double azi = atan2(st.mom(1), st.mom(0));
         double pol = atan2(sqrt(pow(st.mom(0), 2) + pow(st.mom(1), 2)), st.mom(2));
@@ -136,7 +148,7 @@ Track trackParticle(const double x0, const double y0, const double z0,
         tr.y.push_back(st.pos(1));
         tr.z.push_back(st.pos(2));
         tr.time.push_back(current_time);
-        tr.enu.push_back(st.en / cond.massNum);
+        tr.enu.push_back(st.en / massNum);
         tr.azi.push_back(azi);
         tr.pol.push_back(pol);
 
@@ -160,7 +172,7 @@ Track trackParticle(const double x0, const double y0, const double z0,
     return tr;
 }
 
-arma::mat findDeviations(const arma::mat& simtrack, const arma::mat& expdata)
+arma::mat MCminimizer::findDeviations(const arma::mat& simtrack, const arma::mat& expdata)
 {
     // ASSUMPTION: matrices must be sorted in increasing Z order.
 
@@ -173,13 +185,11 @@ arma::mat findDeviations(const arma::mat& simtrack, const arma::mat& expdata)
     return arma::join_horiz(xInterp - expdata.col(0), yInterp - expdata.col(1));
 }
 
-double runTrack(const arma::vec& p, const arma::mat& trueValues,
-                 const Conditions& condBase)
+double MCminimizer::runTrack(const arma::vec& p, const arma::mat& trueValues) const
 {
-    Conditions cond = condBase;
-    cond.bfield = {0, 0, p(6)};
+    arma::vec3 thisBfield = {0, 0, p(6)};
 
-    Track tr = trackParticle(p(0), p(1), p(2), p(3), p(4), p(5), cond);
+    Track tr = trackParticle(p(0), p(1), p(2), p(3), p(4), p(5), thisBfield);
     arma::vec xv (tr.x);
     arma::vec yv (tr.y);
     arma::vec zv (tr.z);
@@ -201,8 +211,8 @@ double runTrack(const arma::vec& p, const arma::mat& trueValues,
     return chi2;
 }
 
-arma::mat makeParams(const arma::vec ctr, const arma::vec sigma, const unsigned numSets,
-                     const arma::vec mins, const arma::vec maxes)
+arma::mat MCminimizer::makeParams(const arma::vec& ctr, const arma::vec& sigma, const unsigned numSets,
+                                  const arma::vec& mins, const arma::vec& maxes)
 {
     const arma::uword numVars = ctr.n_rows;
     assert(sigma.n_rows == numVars);
@@ -219,10 +229,9 @@ arma::mat makeParams(const arma::vec ctr, const arma::vec sigma, const unsigned 
     return params;
 }
 
-MCminimizeResult MCminimize(const arma::vec& ctr0, const arma::vec& sigma0,
-                            const arma::mat& trueValues, const Conditions& cond,
-                            const unsigned numIters, const unsigned numPts,
-                            const double redFactor)
+MCminimizeResult MCminimizer::minimize(const arma::vec& ctr0, const arma::vec& sigma0,
+                                       const arma::mat& trueValues, const unsigned numIters, const unsigned numPts,
+                                       const double redFactor) const
 {
     arma::uword numVars = ctr0.n_rows;
 
@@ -243,7 +252,7 @@ MCminimizeResult MCminimize(const arma::vec& ctr0, const arma::vec& sigma0,
             arma::vec p = arma::conv_to<arma::colvec>::from(params.row(j));
             double chi2;
             try {
-                chi2 = runTrack(p, trueValues, cond);
+                chi2 = runTrack(p, trueValues);
             }
             catch (const std::exception&) {
                 chi2 = arma::datum::nan;

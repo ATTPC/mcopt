@@ -15,7 +15,7 @@ TEST_CASE("Calculated deviations are correct", "[deviations]")
     SECTION("Two equal arrays have zero deviation")
     {
         arma::mat B = A;
-        arma::mat devs = findDeviations(A, B);
+        arma::mat devs = MCminimizer::findDeviations(A, B);
 
         INFO("A = " << A);
         INFO("B = " << B);
@@ -28,7 +28,7 @@ TEST_CASE("Calculated deviations are correct", "[deviations]")
         const double c = 100;
         arma::mat B = A;
         B.col(0) += c;
-        arma::mat devs = findDeviations(A, B);
+        arma::mat devs = MCminimizer::findDeviations(A, B);
 
         INFO("c = " << c);
         INFO("A = " << A);
@@ -44,7 +44,7 @@ TEST_CASE("Calculated deviations are correct", "[deviations]")
         const double c = 100;
         arma::mat B = A;
         B.col(1) += c;
-        arma::mat devs = findDeviations(A, B);
+        arma::mat devs = MCminimizer::findDeviations(A, B);
 
         INFO("c = " << c);
         INFO("A = " << A);
@@ -64,32 +64,32 @@ TEST_CASE("Minimizer works", "[minimizer]")
 
     std::vector<double> eloss = arma::conv_to<std::vector<double>>::from(arma::randu<arma::vec>(100000));
 
-    Conditions cond;
-    cond.massNum = 1;
-    cond.chargeNum = 1;
-    cond.eloss = eloss;
-    cond.efield = arma::vec3({0, 0, 1e3});
-    cond.bfield = arma::vec3({0, 0, 1});
+    unsigned massNum = 1;
+    unsigned chargeNum = 1;
+    arma::vec3 efield {0, 0, 1e3};
+    arma::vec3 bfield {0, 0, 1};
 
     arma::vec ctr0 = {0, 0, 0.9, 1, 0, arma::datum::pi, 0};
     arma::vec sigma = {0, 0, 0.001, 0.5, 0.2, 0.2, 0.1};
 
     SECTION("Minimizer doesn't throw")
     {
+        MCminimizer minimizer {massNum, chargeNum, eloss, efield, bfield};
+
         REQUIRE_NOTHROW(
-            MCminimize(ctr0, sigma, trueValues, cond, 2, 50, 0.8);
+            minimizer.minimize(ctr0, sigma, trueValues, 2, 50, 0.8);
         );
     }
 
     SECTION("Minimizer doesn't throw when eloss is tiny")
     {
         eloss = arma::conv_to<std::vector<double>>::from(arma::randu<arma::vec>(100));
-        cond.eloss = eloss;
+        MCminimizer minimizer {massNum, chargeNum, eloss, efield, bfield};
 
         ctr0(3) = 10;  // raise the energy
 
         REQUIRE_NOTHROW(
-            MCminimize(ctr0, sigma, trueValues, cond, 2, 50, 0.8);
+            minimizer.minimize(ctr0, sigma, trueValues, 2, 50, 0.8);
         );
     }
 }
