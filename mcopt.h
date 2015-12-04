@@ -24,14 +24,20 @@ public:
 class Track
 {
 public:
-    Track() : data(arma::mat(1, 7)) {}
     void append(const double x, const double y, const double z, const double time,
                 const double enu, const double azi, const double pol);
 
-    arma::mat getMatrix() { return data; }
+    arma::mat getMatrix() const;
+    size_t numPts() const;
 
 private:
-    arma::mat data;
+    std::vector<double> x;
+    std::vector<double> y;
+    std::vector<double> z;
+    std::vector<double> time;
+    std::vector<double> enu;
+    std::vector<double> azi;
+    std::vector<double> pol;
 };
 
 typedef std::tuple<arma::vec, arma::mat, arma::vec, arma::vec> MCminimizeResult;
