@@ -30,11 +30,6 @@ void Track::append(const double x, const double y, const double z, const double 
     data.insert_rows(data.n_rows, newRow);
 }
 
-const arma::mat& Track::getMatrix() const
-{
-    return data;
-}
-
 void MCminimizer::updateState(State& st, const double tstep) const
 {
     return updateState(st, tstep, this->bfield);
@@ -179,7 +174,7 @@ double MCminimizer::runTrack(const arma::vec& p, const arma::mat& trueValues) co
     arma::vec3 thisBfield = {0, 0, p(6)};
 
     Track tr = trackParticle(p(0), p(1), p(2), p(3), p(4), p(5), thisBfield);
-    const arma::mat simtrack = tr.getMatrix();
+    arma::mat simtrack = tr.getMatrix();
 
     double zlenSim = simtrack.col(2).max() - simtrack.col(2).min();
     double zlenTrue = trueValues.col(2).max() - trueValues.col(2).min();

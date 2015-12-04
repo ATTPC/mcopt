@@ -28,7 +28,7 @@ public:
     void append(const double x, const double y, const double z, const double time,
                 const double enu, const double azi, const double pol);
 
-    const arma::mat& getMatrix() const;
+    arma::mat getMatrix() { return data; }
 
 private:
     arma::mat data;
