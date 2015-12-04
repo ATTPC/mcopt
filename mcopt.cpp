@@ -181,9 +181,9 @@ Track MCminimizer::trackParticle(const double x0, const double y0, const double 
         tr.append(st.pos(0), st.pos(1), st.pos(2), current_time, st.en / massNum, azi, pol);
 
         // double rad = arma::norm(st.pos);
-        // if (st.pos(2) < 0 || st.pos(2) > 1 || rad > 0.275) {
-        //     break;
-        // }
+        if (st.pos(2) < 0 || st.pos(2) > 1) { // || rad > 0.275) {
+            break;
+        }
     }
 
     return tr;
