@@ -7,6 +7,9 @@
 #include <string>
 #include <tuple>
 
+
+arma::vec dropNaNs(const arma::vec& data);
+
 class State
 {
 public:

@@ -23,6 +23,31 @@ static inline double betaFactor(const double en, const double massNum)
     return (sqrt(en)*sqrt(en + 2*P_MC2*massNum)) / (en + massNum*P_MC2);
 }
 
+arma::vec dropNaNs(const arma::vec& data)
+{
+    if (!data.has_nan()) {
+        return data;
+    }
+    arma::vec res (data.n_rows, data.n_cols);
+    arma::uword dataIter = 0;
+    arma::uword resIter = 0;
+
+    for (; dataIter < data.n_rows && resIter < res.n_rows; dataIter++) {
+        if (!std::isnan(data(dataIter))) {
+            res(resIter) = data(dataIter);
+            resIter++;
+        }
+    }
+
+    if (resIter == 0) {
+        res.clear();
+        return res;
+    }
+    else {
+        return res.rows(0, resIter-1);
+    }
+}
+
 void Track::append(const double xi, const double yi, const double zi, const double timei,
                    const double enui, const double azii, const double poli)
 {
@@ -213,10 +238,15 @@ double MCminimizer::runTrack(const arma::vec& p, const arma::mat& trueValues) co
     double zlenTrue = trueValues.col(2).max() - trueValues.col(2).min();
 
     double chi2 = 0;
-    if (simtrack.n_rows > 10 and std::abs(zlenSim - zlenTrue) < 0.5) {
+    if (simtrack.n_rows > 10 and (zlenSim - zlenTrue) >= -0.05) {
         arma::mat devs = findDeviations(simtrack, trueValues);
-        arma::vec temp = arma::sum(arma::square(devs), 1);
-        chi2 = arma::median(temp);
+        arma::vec temp = dropNaNs(arma::sum(arma::square(devs), 1));
+        if (!temp.is_empty()) {
+            chi2 = arma::median(temp);
+        }
+        else {
+            chi2 = 200;
+        }
     }
     else {
         chi2 = 100;
