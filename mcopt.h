@@ -6,6 +6,7 @@
 #include <vector>
 #include <string>
 #include <tuple>
+#include <set>
 
 
 arma::vec dropNaNs(const arma::vec& data);
@@ -91,7 +92,7 @@ class PadPlane
 {
 public:
     PadPlane(const arma::Mat<uint16_t>& lt, const double xLB, const double xDelta, const double yLB, const double yDelta);
-    uint16_t getPadNumberFromCoordinates(const double x, const double y);
+    uint16_t getPadNumberFromCoordinates(const double x, const double y) const;
 
 private:
     double xLowerBound;
@@ -106,7 +107,6 @@ private:
 arma::mat calibrate(const Track& tr, const arma::vec vd, const double clock);
 arma::mat uncalibrate(const Track& tr, const arma::vec vd, const double clock, const int offset=0);
 
-std::vector<uint16_t> findHitPads(const Track& tr, const double clock, const arma::vec& vd, const double ioniz,
-                                  const int proj_mass, const double shapetime, const int offset, const double padrot);
+std::set<uint16_t> findHitPads(const PadPlane& pads, const Track& tr, const arma::vec& vd, const double clock);
 
 #endif /* def MCOPT_H */

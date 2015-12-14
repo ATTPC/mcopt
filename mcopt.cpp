@@ -324,12 +324,12 @@ PadPlane::PadPlane(const arma::Mat<uint16_t>& lt, const double xLB, const double
     yUpperBound = yLowerBound + lookupTable.n_rows * yDelta;
 }
 
-uint16_t PadPlane::getPadNumberFromCoordinates(const double x, const double y)
+uint16_t PadPlane::getPadNumberFromCoordinates(const double x, const double y) const
 {
     int xPos = std::round((x - xLowerBound) / xDelta);
     int yPos = std::round((y - yLowerBound) / yDelta);
     if (xPos < 0 || yPos < 0 || xPos >= lookupTable.n_cols || yPos >= lookupTable.n_rows) {
-        return -1;
+        return 20000;
     }
     return lookupTable(xPos, yPos);
 }
@@ -356,10 +356,18 @@ arma::mat uncalibrate(const Track& tr, const arma::vec vd, const double clock, c
 
     return result;
 }
-//
-// std::vector<uint16_t> findHitPads(const Track& tr, const double clock, const arma::vec& vd, const double ioniz,
-//                                   const int proj_mass, const double shapetime, const int offset, const double padrot)
-// {
-//
-//
-// }
+
+std::set<uint16_t> findHitPads(const PadPlane& pads, const Track& tr, const arma::vec& vd, const double clock)
+{
+    arma::mat uncal = uncalibrate(tr, vd, clock);
+    std::set<uint16_t> result;
+
+    for (arma::uword i = 0; i < uncal.n_rows; i++) {
+        uint16_t pad = pads.getPadNumberFromCoordinates(uncal(i, 0), uncal(i, 1));
+        if (pad != 20000) {
+            result.insert(pad);
+        }
+    }
+
+    return result;
+}
