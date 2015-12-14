@@ -316,3 +316,50 @@ MCminimizeResult MCminimizer::minimize(const arma::vec& ctr0, const arma::vec& s
     }
     return std::make_tuple(ctr, allParams, minChis, goodParamIdx);
 }
+
+PadPlane::PadPlane(const arma::Mat<uint16_t>& lt, const double xLB, const double xDelta, const double yLB, const double yDelta)
+: xLowerBound(xLB), yLowerBound(yLB), xDelta(xDelta), yDelta(yDelta), lookupTable(lt)
+{
+    xUpperBound = xLowerBound + lookupTable.n_cols * xDelta;
+    yUpperBound = yLowerBound + lookupTable.n_rows * yDelta;
+}
+
+uint16_t PadPlane::getPadNumberFromCoordinates(const double x, const double y)
+{
+    int xPos = std::round((x - xLowerBound) / xDelta);
+    int yPos = std::round((y - yLowerBound) / yDelta);
+    if (xPos < 0 || yPos < 0 || xPos >= lookupTable.n_cols || yPos >= lookupTable.n_rows) {
+        return -1;
+    }
+    return lookupTable(xPos, yPos);
+}
+
+arma::mat calibrate(const Track& tr, const arma::vec vd, const double clock)
+{
+    arma::mat trMat = tr.getMatrix();
+    arma::mat pos = trMat.cols(0, 2);
+    arma::mat result = pos + pos.col(2) * -vd.t() / clock * 10;
+    result.col(2) -= pos.col(2);
+
+    return result;
+}
+
+arma::mat uncalibrate(const Track& tr, const arma::vec vd, const double clock, const int offset)
+{
+    arma::mat trMat = tr.getMatrix();
+    arma::mat pos = trMat.cols(0, 2);
+
+    auto tbs = pos.col(2) * clock / (10 * -vd(2)) + offset;
+
+    arma::mat result = pos - tbs * -vd.t() / clock * 10;
+    result.col(2) = tbs;
+
+    return result;
+}
+//
+// std::vector<uint16_t> findHitPads(const Track& tr, const double clock, const arma::vec& vd, const double ioniz,
+//                                   const int proj_mass, const double shapetime, const int offset, const double padrot)
+// {
+//
+//
+// }

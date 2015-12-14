@@ -65,6 +65,7 @@ public:
     MCminimizeResult minimize(const arma::vec& ctr0, const arma::vec& sigma0, const arma::mat& trueValues,
                               const unsigned numIters, const unsigned numPts, const double redFactor) const;
 
+
 private:
     void updateState(State& st, const double tstep) const;
     void updateState(State& st, const double tstep, const arma::vec3& thisBfield) const;
@@ -85,5 +86,27 @@ public:
 private:
     std::string msg;
 };
+
+class PadPlane
+{
+public:
+    PadPlane(const arma::Mat<uint16_t>& lt, const double xLB, const double xDelta, const double yLB, const double yDelta);
+    uint16_t getPadNumberFromCoordinates(const double x, const double y);
+
+private:
+    double xLowerBound;
+    double yLowerBound;
+    double xDelta;
+    double yDelta;
+    double xUpperBound;
+    double yUpperBound;
+    const arma::Mat<uint16_t> lookupTable;
+};
+
+arma::mat calibrate(const Track& tr, const arma::vec vd, const double clock);
+arma::mat uncalibrate(const Track& tr, const arma::vec vd, const double clock, const int offset=0);
+
+std::vector<uint16_t> findHitPads(const Track& tr, const double clock, const arma::vec& vd, const double ioniz,
+                                  const int proj_mass, const double shapetime, const int offset, const double padrot);
 
 #endif /* def MCOPT_H */
