@@ -1,8 +1,7 @@
 #ifndef MCOPT_H
 #define MCOPT_H
 
-#include "arma_include.h"
-// #include <armadillo>
+#include <armadillo>
 #include <vector>
 #include <string>
 #include <tuple>

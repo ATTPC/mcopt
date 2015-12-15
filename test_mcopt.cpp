@@ -2,7 +2,7 @@
 #include "catch.hpp"
 
 #include "mcopt.h"
-#include "arma_include.h"
+#include <armadillo>
 
 TEST_CASE("Calculated deviations are correct", "[deviations]")
 {
