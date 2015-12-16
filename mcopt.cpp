@@ -326,8 +326,9 @@ PadPlane::PadPlane(const arma::Mat<uint16_t>& lt, const double xLB, const double
 
 uint16_t PadPlane::getPadNumberFromCoordinates(const double x, const double y) const
 {
-    int xPos = std::round((x - xLowerBound) / xDelta);
-    int yPos = std::round((y - yLowerBound) / yDelta);
+    double xPos = std::round((x - xLowerBound) / xDelta);
+    double yPos = std::round((y - yLowerBound) / yDelta);
+
     if (xPos < 0 || yPos < 0 || xPos >= lookupTable.n_cols || yPos >= lookupTable.n_rows) {
         return 20000;
     }
