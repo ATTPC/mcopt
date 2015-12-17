@@ -74,6 +74,26 @@ arma::mat Track::getMatrix() const
     return result;
 }
 
+void Track::unTiltAndRecenter(const arma::vec beamCtr, const double tilt)
+{
+    arma::mat data (numPts(), 3);
+    data.col(0) = arma::vec(x) + beamCtr(0);
+    data.col(1) = arma::vec(y) + beamCtr(1);
+    data.col(2) = arma::vec(z);
+
+    arma::mat tmat {{1, 0, 0},
+                    {0, cos(tilt), -sin(tilt)},
+                    {0, sin(tilt), cos(tilt)}};
+
+    data = (tmat * data.t()).t();
+    data.col(2) += beamCtr(2);
+
+    x = arma::conv_to<std::vector<double>>::from(data.col(0));
+    y = arma::conv_to<std::vector<double>>::from(data.col(1));
+    z = arma::conv_to<std::vector<double>>::from(data.col(2));
+    return;
+}
+
 size_t Track::numPts() const
 {
     size_t N = x.size();
@@ -317,8 +337,9 @@ MCminimizeResult MCminimizer::minimize(const arma::vec& ctr0, const arma::vec& s
     return std::make_tuple(ctr, allParams, minChis, goodParamIdx);
 }
 
-PadPlane::PadPlane(const arma::Mat<uint16_t>& lt, const double xLB, const double xDelta, const double yLB, const double yDelta)
-: xLowerBound(xLB), yLowerBound(yLB), xDelta(xDelta), yDelta(yDelta), lookupTable(lt)
+PadPlane::PadPlane(const arma::Mat<uint16_t>& lt, const double xLB, const double xDelta,
+                   const double yLB, const double yDelta, const double rotAngle)
+: xLowerBound(xLB), yLowerBound(yLB), xDelta(xDelta), yDelta(yDelta), lookupTable(lt), rotAngle(rotAngle)
 {
     xUpperBound = xLowerBound + lookupTable.n_cols * xDelta;
     yUpperBound = yLowerBound + lookupTable.n_rows * yDelta;
@@ -326,8 +347,11 @@ PadPlane::PadPlane(const arma::Mat<uint16_t>& lt, const double xLB, const double
 
 uint16_t PadPlane::getPadNumberFromCoordinates(const double x, const double y) const
 {
-    double xPos = std::round((x - xLowerBound) / xDelta);
-    double yPos = std::round((y - yLowerBound) / yDelta);
+    double rotX = cos(-rotAngle) * x - sin(-rotAngle) * y;
+    double rotY = sin(-rotAngle) * x + cos(-rotAngle) * y;
+
+    double xPos = std::round((rotX - xLowerBound) / xDelta);
+    double yPos = std::round((rotY - yLowerBound) / yDelta);
 
     if (xPos < 0 || yPos < 0 || xPos >= lookupTable.n_cols || yPos >= lookupTable.n_rows) {
         return 20000;

@@ -32,6 +32,7 @@ public:
 
     arma::mat getMatrix() const;
     size_t numPts() const;
+    void unTiltAndRecenter(const arma::vec beamCtr, const double tilt);
 
 private:
     std::vector<double> x;
@@ -90,7 +91,8 @@ private:
 class PadPlane
 {
 public:
-    PadPlane(const arma::Mat<uint16_t>& lt, const double xLB, const double xDelta, const double yLB, const double yDelta);
+    PadPlane(const arma::Mat<uint16_t>& lt, const double xLB, const double xDelta,
+             const double yLB, const double yDelta, const double rotAngle=0);
     uint16_t getPadNumberFromCoordinates(const double x, const double y) const;
 
 private:
@@ -101,6 +103,7 @@ private:
     double xUpperBound;
     double yUpperBound;
     const arma::Mat<uint16_t> lookupTable;
+    double rotAngle;
 };
 
 arma::mat calibrate(const Track& tr, const arma::vec vd, const double clock);
