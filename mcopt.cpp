@@ -82,8 +82,8 @@ void Track::unTiltAndRecenter(const arma::vec beamCtr, const double tilt)
     data.col(2) = arma::vec(z);
 
     arma::mat tmat {{1, 0, 0},
-                    {0, cos(tilt), -sin(tilt)},
-                    {0, sin(tilt), cos(tilt)}};
+                    {0, cos(-tilt), -sin(-tilt)},
+                    {0, sin(-tilt), cos(-tilt)}};
 
     data = (tmat * data.t()).t();
     data.col(2) += beamCtr(2);
