@@ -382,15 +382,20 @@ arma::mat uncalibrate(const Track& tr, const arma::vec vd, const double clock, c
     return result;
 }
 
-std::set<uint16_t> findHitPads(const PadPlane& pads, const Track& tr, const arma::vec& vd, const double clock)
+std::map<uint16_t, unsigned long> findHitPads(const PadPlane& pads, const Track& tr, const arma::vec& vd,
+                                              const double clock, const int massNum, const double ioniz)
 {
     arma::mat uncal = uncalibrate(tr, vd, clock);
-    std::set<uint16_t> result;
+    arma::vec en = tr.getEnergyVector() * 1e6 * massNum;
+    assert(en.n_rows == uncal.n_rows);
+    arma::vec ne = arma::floor(-arma::diff(en) / ioniz);
 
-    for (arma::uword i = 0; i < uncal.n_rows; i++) {
+    std::map<uint16_t, unsigned long> result;
+
+    for (arma::uword i = 0; i < uncal.n_rows - 1; i++) {
         uint16_t pad = pads.getPadNumberFromCoordinates(uncal(i, 0), uncal(i, 1));
         if (pad != 20000) {
-            result.insert(pad);
+            result.emplace(pad, ne(i));
         }
     }
 

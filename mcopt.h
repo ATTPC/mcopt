@@ -6,6 +6,7 @@
 #include <string>
 #include <tuple>
 #include <set>
+#include <map>
 
 
 arma::vec dropNaNs(const arma::vec& data);
@@ -31,6 +32,7 @@ public:
                 const double enu, const double azi, const double pol);
 
     arma::mat getMatrix() const;
+    arma::vec getEnergyVector() const { return arma::vec(enu); }
     size_t numPts() const;
     void unTiltAndRecenter(const arma::vec beamCtr, const double tilt);
 
@@ -109,6 +111,7 @@ private:
 arma::mat calibrate(const Track& tr, const arma::vec vd, const double clock);
 arma::mat uncalibrate(const Track& tr, const arma::vec vd, const double clock, const int offset=0);
 
-std::set<uint16_t> findHitPads(const PadPlane& pads, const Track& tr, const arma::vec& vd, const double clock);
+std::map<uint16_t, unsigned long> findHitPads(const PadPlane& pads, const Track& tr, const arma::vec& vd,
+                                              const double clock, const int massNum, const double ioniz);
 
 #endif /* def MCOPT_H */
