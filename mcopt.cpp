@@ -359,7 +359,7 @@ uint16_t PadPlane::getPadNumberFromCoordinates(const double x, const double y) c
     return lookupTable(xPos, yPos);
 }
 
-arma::mat calibrate(const Track& tr, const arma::vec vd, const double clock)
+arma::mat calibrate(const Track& tr, const arma::vec& vd, const double clock)
 {
     arma::mat trMat = tr.getMatrix();
     arma::mat pos = trMat.cols(0, 2);
@@ -369,12 +369,12 @@ arma::mat calibrate(const Track& tr, const arma::vec vd, const double clock)
     return result;
 }
 
-arma::mat uncalibrate(const Track& tr, const arma::vec vd, const double clock, const int offset)
+arma::mat uncalibrate(const Track& tr, const arma::vec& vd, const double clock, const int offset)
 {
     arma::mat trMat = tr.getMatrix();
     arma::mat pos = trMat.cols(0, 2);
 
-    auto tbs = pos.col(2) * clock / (10 * -vd(2)) + offset;
+    arma::vec tbs = pos.col(2) * clock / (10 * -vd(2)) + offset;
 
     arma::mat result = pos - tbs * -vd.t() / clock * 10;
     result.col(2) = tbs;
