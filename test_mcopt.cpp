@@ -3,6 +3,7 @@
 
 #include "mcopt.h"
 #include <armadillo>
+#include <cmath>
 
 TEST_CASE("Calculated deviations are correct", "[deviations]")
 {
@@ -182,5 +183,32 @@ TEST_CASE("Calibration and uncalibration work", "[eventGenerator]")
         CAPTURE(uncal);
 
         REQUIRE(arma::accu(arma::abs(uncal - expected)) < 1e-6);
+    }
+}
+
+TEST_CASE("Parameter generator works", "[makeParams]")
+{
+    arma::arma_rng::set_seed(12345);
+    arma::vec ctr = {1, 2, 3, 4, 5, 6};
+    arma::vec sig = {1, 2, 3, 4, 5, 6};
+    unsigned numSets = 1000;
+
+    SECTION("Set of parameters follows uniform distribution")
+    {
+        arma::vec mins = {0, 0, 0, 0, 0, 0};
+        arma::vec maxes = {100, 100, 100, 100, 100, 100};
+
+        arma::mat params = MCminimizer::makeParams(ctr, sig, numSets, mins, maxes);
+
+        for (arma::uword j = 0; j < params.n_cols; j++) {
+            double mean = arma::mean(params.col(j));
+            double min = arma::min(params.col(j));
+            double max = arma::max(params.col(j));
+
+            CHECK(min < mean);
+            CHECK(mean < max);
+            CHECK(fabs(min - (ctr(j) - sig(j)/2)) < 1e-1);
+            CHECK(fabs(max - (ctr(j) + sig(j)/2)) < 1e-1);
+        }
     }
 }
