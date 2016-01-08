@@ -16,7 +16,7 @@ TEST_CASE("Calculated deviations are correct", "[deviations]")
     SECTION("Two equal arrays have zero deviation")
     {
         arma::mat B = A;
-        arma::mat devs = MCminimizer::findDeviations(A, B);
+        arma::mat devs = mcopt::MCminimizer::findDeviations(A, B);
 
         INFO("A = " << A);
         INFO("B = " << B);
@@ -29,7 +29,7 @@ TEST_CASE("Calculated deviations are correct", "[deviations]")
         const double c = 100;
         arma::mat B = A;
         B.col(0) += c;
-        arma::mat devs = MCminimizer::findDeviations(A, B);
+        arma::mat devs = mcopt::MCminimizer::findDeviations(A, B);
 
         INFO("c = " << c);
         INFO("A = " << A);
@@ -45,7 +45,7 @@ TEST_CASE("Calculated deviations are correct", "[deviations]")
         const double c = 100;
         arma::mat B = A;
         B.col(1) += c;
-        arma::mat devs = MCminimizer::findDeviations(A, B);
+        arma::mat devs = mcopt::MCminimizer::findDeviations(A, B);
 
         INFO("c = " << c);
         INFO("A = " << A);
@@ -75,7 +75,7 @@ TEST_CASE("Minimizer works", "[minimizer]")
 
     SECTION("Minimizer doesn't throw")
     {
-        MCminimizer minimizer {massNum, chargeNum, eloss, efield, bfield};
+        mcopt::MCminimizer minimizer {massNum, chargeNum, eloss, efield, bfield};
 
         REQUIRE_NOTHROW(
             minimizer.minimize(ctr0, sigma, trueValues, 2, 50, 0.8);
@@ -85,7 +85,7 @@ TEST_CASE("Minimizer works", "[minimizer]")
     SECTION("Minimizer doesn't throw when eloss is tiny")
     {
         eloss = arma::conv_to<std::vector<double>>::from(arma::randu<arma::vec>(100));
-        MCminimizer minimizer {massNum, chargeNum, eloss, efield, bfield};
+        mcopt::MCminimizer minimizer {massNum, chargeNum, eloss, efield, bfield};
 
         ctr0(3) = 10;  // raise the energy
 
@@ -103,7 +103,7 @@ TEST_CASE("dropNaNs function works", "[dropNaNs]")
     {
         arma::vec testData = {nan, 1, 2, 3, 4, nan, 5, 6, nan, 7, 8, 9, nan, nan, nan};
         arma::vec answer = {1, 2, 3, 4, 5, 6, 7, 8, 9};
-        arma::vec result = dropNaNs(testData);
+        arma::vec result = mcopt::dropNaNs(testData);
         CAPTURE(result);
 
         REQUIRE(arma::accu(arma::abs(result - answer)) < 1e-6);
@@ -113,7 +113,7 @@ TEST_CASE("dropNaNs function works", "[dropNaNs]")
     SECTION("Nothing happens when NaNs are not present")
     {
         arma::vec testData = {1, 2, 3, 4, 5, 6};
-        arma::vec result = dropNaNs(testData);
+        arma::vec result = mcopt::dropNaNs(testData);
         CAPTURE(result);
 
         REQUIRE(arma::accu(arma::abs(testData - result)) < 1e-6);
@@ -122,7 +122,7 @@ TEST_CASE("dropNaNs function works", "[dropNaNs]")
     SECTION("Get empty vector when input is all NaNs")
     {
         arma::vec testData = {nan, nan, nan, nan};
-        arma::vec result = dropNaNs(testData);
+        arma::vec result = mcopt::dropNaNs(testData);
         CAPTURE(result);
 
         REQUIRE(result.is_empty());
@@ -131,7 +131,7 @@ TEST_CASE("dropNaNs function works", "[dropNaNs]")
 
 TEST_CASE("Calibration and uncalibration work", "[eventGenerator]")
 {
-    Track tr;
+    mcopt::Track tr;
     for (int i = 0; i < 512; i++) {
         tr.append(-200+i, -200+i, i, 0, 0, 0, 0);
     }
@@ -141,7 +141,7 @@ TEST_CASE("Calibration and uncalibration work", "[eventGenerator]")
     SECTION("Calibration works")
     {
         arma::mat orig_data = tr.getMatrix().cols(0, 2);
-        arma::mat cal = calibrate(tr, vd, clock);
+        arma::mat cal = mcopt::calibrate(tr, vd, clock);
 
         REQUIRE(orig_data.n_rows == cal.n_rows);
         REQUIRE(cal.n_cols == 3);
@@ -171,8 +171,8 @@ TEST_CASE("Calibration and uncalibration work", "[eventGenerator]")
 
     SECTION("Round-trip operation is the identity")
     {
-        auto cal = calibrate(tr, vd, clock);
-        Track tr2;
+        auto cal = mcopt::calibrate(tr, vd, clock);
+        mcopt::Track tr2;
         for (arma::uword i = 0; i < cal.n_rows; i++) {
             tr2.append(cal(i, 0), cal(i, 1), cal(i, 2), 0, 0, 0, 0);
         }
@@ -198,7 +198,7 @@ TEST_CASE("Parameter generator works", "[makeParams]")
         arma::vec mins = {0, 0, 0, 0, 0, 0};
         arma::vec maxes = {100, 100, 100, 100, 100, 100};
 
-        arma::mat params = MCminimizer::makeParams(ctr, sig, numSets, mins, maxes);
+        arma::mat params = mcopt::MCminimizer::makeParams(ctr, sig, numSets, mins, maxes);
 
         for (arma::uword j = 0; j < params.n_cols; j++) {
             double mean = arma::mean(params.col(j));
