@@ -111,6 +111,15 @@ TEST_CASE("Trigger class works", "[trigger]")
         REQUIRE(std::abs(expectedThresh - trig.getPadThresh()) < 1e-6);
     }
 
+    SECTION("Multiplicity window is right")
+    {
+        unsigned long expected = std::lround(multWindow / 100e6 * writeCk);
+        CAPTURE(expected);
+        auto actual = trig.getMultWindow();
+        CAPTURE(actual);
+        REQUIRE(expected == actual);
+    }
+
     SECTION("Trigger signals are valid")
     {
         std::map<mcopt::pad_t, mcopt::Peak> peaks;
@@ -149,5 +158,22 @@ TEST_CASE("Trigger class works", "[trigger]")
                 REQUIRE(std::abs(v - 48) < 1e-6);
             }
         }
+    }
+
+    SECTION("Multiplicity window function works")
+    {
+        arma::mat trigSignals (10, 512, arma::fill::zeros);
+        trigSignals(arma::span(0, 5), arma::span(5, 10)).fill(50);
+
+        arma::mat mult = trig.applyMultiplicityWindow(trigSignals);
+        std::cout << "Found mult" << std::endl;
+
+        arma::mat expected (arma::size(trigSignals), arma::fill::zeros);
+        for (arma::uword j = 5; j < 10; j++) {
+            expected(arma::span(0, 5), j).fill(50 * (j - 5));
+            expected(arma::span(0, 5), j+5).fill(50 * (5 - j));
+        }
+
+        REQUIRE(arma::accu(mult - expected) < 1e-6);
     }
 }

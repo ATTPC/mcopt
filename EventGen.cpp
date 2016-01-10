@@ -72,7 +72,7 @@ namespace mcopt
         this->multWindow = std::lround(multWindow / masterCk * writeCk);
     }
 
-    std::vector<arma::vec> Trigger::findTriggerSignals(const std::map<uint16_t, Peak>& peaks)
+    std::vector<arma::vec> Trigger::findTriggerSignals(const std::map<uint16_t, Peak>& peaks) const
     {
         std::vector<arma::vec> res (10, arma::vec(512, arma::fill::zeros));
         for (const auto& pair : peaks) {
@@ -81,11 +81,22 @@ namespace mcopt
 
             if (peak.amplitude < padThresh) continue;
 
-            int cobo = padmap.reverseFind(pad).cobo;
+            auto cobo = padmap.reverseFind(pad).cobo;
             assert(cobo != padmap.missingValue);
 
             arma::vec sig = squareWave(512, peak.timeBucket, trigWidth, trigHeight);
             res.at(cobo) += sig;
+        }
+        return res;
+    }
+
+    arma::mat Trigger::applyMultiplicityWindow(const arma::mat& trigs) const
+    {
+        arma::mat res (arma::size(trigs), arma::fill::zeros);
+        for (unsigned long j = 0; j < trigs.n_cols; j++) {
+            unsigned long min = j < multWindow ? 0 : j - multWindow;
+            unsigned long max = j;
+            res.col(j) = arma::sum(trigs.cols(min, max), 1);
         }
         return res;
     }

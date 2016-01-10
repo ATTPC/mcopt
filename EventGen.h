@@ -3,6 +3,7 @@
 
 #include <armadillo>
 #include <map>
+#include <algorithm>
 #include <vector>
 #include <cassert>
 #include <cmath>
@@ -33,10 +34,11 @@ namespace mcopt
                 const unsigned long multThresh, const unsigned long multWindow, const double writeCk,
                 const double gain, const double discrFrac, const PadMap& padmap);
 
-        std::vector<arma::vec> findTriggerSignals(const std::map<uint16_t, Peak>& peaks);
-        arma::vec findMultiplicitySignals(const std::map<uint16_t, Peak>& peaks);
+        std::vector<arma::vec> findTriggerSignals(const std::map<uint16_t, Peak>& peaks) const;
+        arma::mat applyMultiplicityWindow(const arma::mat& trigs) const;
 
         double getPadThresh() const { return padThresh; }
+        unsigned long getMultWindow() const { return multWindow; }
 
     private:
         double padThresh;
@@ -45,7 +47,7 @@ namespace mcopt
         unsigned long multThresh;
         unsigned long multWindow;
         double writeCk;
-        double masterCk = 100;
+        double masterCk = 100e6;
         const PadMap padmap;
     };
 }
