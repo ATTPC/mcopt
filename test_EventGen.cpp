@@ -61,10 +61,10 @@ TEST_CASE("Calibration and uncalibration work", "[eventGenerator]")
 
 TEST_CASE("Square wave function works", "[trigger]")
 {
-    int size = 512;
+    arma::uword size = 512;
     double height = 20.5;
-    int leftEdge = 30;
-    int width = 20;
+    arma::uword leftEdge = 30;
+    arma::uword width = 20;
 
     arma::vec wave = mcopt::squareWave(size, leftEdge, width, height);
 
@@ -76,6 +76,77 @@ TEST_CASE("Square wave function works", "[trigger]")
             }
             else {
                 REQUIRE(wave(i) - height < 1e-6);
+            }
+        }
+    }
+}
+
+TEST_CASE("Trigger class works", "[trigger]")
+{
+    unsigned padThreshMSB = 1;
+    unsigned padThreshLSB = 2;
+    double trigWidth = 200e-9;
+    unsigned multThresh = 10000;
+    unsigned multWindow = 300;
+    double writeCk = 12.5e6;
+    double gain = 120e-15;
+    double discrFrac = 0.175;
+
+    mcopt::PadMap padmap;
+    padmap.insert(0, 0, 0, 0, 0);
+    padmap.insert(1, 0, 0, 0, 1);
+
+    mcopt::Trigger trig (padThreshMSB, padThreshLSB, trigWidth, multThresh, multWindow,
+                         writeCk, gain, discrFrac, padmap);
+
+    SECTION("Pad threshold is right")
+    {
+        double threshSetting = (padThreshMSB << 4) + padThreshLSB;
+        CAPTURE(threshSetting);
+        double fullScale = gain / 4096 / 1.602176565e-19;;
+        CAPTURE(fullScale);
+        double expectedThresh = (threshSetting / 128) * discrFrac * 4096 * fullScale;
+        CAPTURE(trig.getPadThresh());
+        CAPTURE(expectedThresh);
+        REQUIRE(std::abs(expectedThresh - trig.getPadThresh()) < 1e-6);
+    }
+
+    SECTION("Trigger signals are valid")
+    {
+        std::map<mcopt::pad_t, mcopt::Peak> peaks;
+        peaks.emplace(0, mcopt::Peak{10, 1});
+        peaks.emplace(1, mcopt::Peak{10, 20000});
+
+        CAPTURE(trig.getPadThresh());
+
+        auto res = trig.findTriggerSignals(peaks);
+
+        SECTION("Signals below pad threshold do not trigger")
+        {
+            const arma::vec& v = res.at(0);
+            CAPTURE(arma::nonzeros(v));
+            REQUIRE(arma::accu(v) < 1e-6);
+        }
+
+        SECTION("Signals above pad threshold do trigger")
+        {
+            const arma::vec& v = res.at(1);
+            CAPTURE(arma::nonzeros(v));
+            REQUIRE(arma::accu(v) > 0);
+        }
+
+        SECTION("Trigger pulse shape is right")
+        {
+            const arma::vec& pulse = res.at(1);
+            arma::vec nz = arma::nonzeros(pulse);
+            double width = nz.n_rows;
+            CAPTURE(width);
+            unsigned long expWidth = std::lround(trigWidth * writeCk);
+            CAPTURE(expWidth);
+            REQUIRE(std::abs(width - expWidth) < 1e-6);
+
+            for (auto v : nz) {
+                REQUIRE(std::abs(v - 48) < 1e-6);
             }
         }
     }

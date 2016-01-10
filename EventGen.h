@@ -29,12 +29,14 @@ namespace mcopt
     class Trigger
     {
     public:
-        Trigger(const unsigned int padThreshMSB, const unsigned int padThreshLSB, const unsigned int trigWidth,
+        Trigger(const unsigned int padThreshMSB, const unsigned int padThreshLSB, const double trigWidth,
                 const unsigned long multThresh, const unsigned long multWindow, const double writeCk,
                 const double gain, const double discrFrac, const PadMap& padmap);
 
         std::vector<arma::vec> findTriggerSignals(const std::map<uint16_t, Peak>& peaks);
         arma::vec findMultiplicitySignals(const std::map<uint16_t, Peak>& peaks);
+
+        double getPadThresh() const { return padThresh; }
 
     private:
         double padThresh;

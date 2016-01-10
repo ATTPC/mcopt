@@ -58,12 +58,12 @@ namespace mcopt
         return result;
     }
 
-    Trigger::Trigger(const unsigned int padThreshMSB, const unsigned int padThreshLSB, const unsigned int trigWidth,
+    Trigger::Trigger(const unsigned int padThreshMSB, const unsigned int padThreshLSB, const double trigWidth,
             const unsigned long multThresh, const unsigned long multWindow, const double writeCk,
             const double gain, const double discrFrac, const PadMap& padmap)
         : multThresh(multThresh), writeCk(writeCk), padmap(padmap)
     {
-        unsigned long pt = ((padThreshMSB << 4) + padThreshLSB);
+        double pt = ((padThreshMSB << 4) + padThreshLSB);
         double discrMax = discrFrac * 4096;  // in data ADC bins
         double elecPerBin = gain / 4096 / E_CHG;
         padThresh = (pt / 128) * discrMax * elecPerBin;
@@ -75,7 +75,6 @@ namespace mcopt
     std::vector<arma::vec> Trigger::findTriggerSignals(const std::map<uint16_t, Peak>& peaks)
     {
         std::vector<arma::vec> res (10, arma::vec(512, arma::fill::zeros));
-        arma::vec trigAccum (512, arma::fill::zeros);
         for (const auto& pair : peaks) {
             const auto& pad = pair.first;
             const auto& peak = pair.second;
@@ -85,7 +84,7 @@ namespace mcopt
             int cobo = padmap.reverseFind(pad).cobo;
             assert(cobo != padmap.missingValue);
 
-            arma::vec sig = squareWave(trigAccum.n_rows, peak.timeBucket, trigWidth, trigHeight);
+            arma::vec sig = squareWave(512, peak.timeBucket, trigWidth, trigHeight);
             res.at(cobo) += sig;
         }
         return res;

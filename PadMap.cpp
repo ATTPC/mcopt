@@ -32,6 +32,15 @@ namespace mcopt
         }
     }
 
+    void PadMap::insert(const int cobo, const int asad, const int aget, const int channel, const pad_t pad)
+    {
+        auto hash = CalculateHash(cobo, asad, aget, channel);
+
+        table.emplace(hash, pad);
+        reverseTable.emplace(pad, Address{cobo, asad, aget, channel});
+        return;
+    }
+
     bool PadMap::empty() const
     {
         return table.empty();
@@ -53,7 +62,7 @@ namespace mcopt
 
         while (!file.eof()) {
             int cobo, asad, aget, channel;
-            pad_t value;
+            pad_t pad;
             getline(file,line,'\n');
             std::stringstream lineStream(line);
             std::string element;
@@ -71,13 +80,10 @@ namespace mcopt
             getline(lineStream, element,',');
             channel = stoi(element);
 
-            auto hash = CalculateHash(cobo, asad, aget, channel);
-
             getline(lineStream, element);
-            value = stoi(element);
+            pad = stoi(element);
 
-            table.emplace(hash, value);
-            reverseTable.emplace(value, Address{cobo, asad, aget, channel});
+            insert(cobo, asad, aget, channel, pad);
         }
     }
 }

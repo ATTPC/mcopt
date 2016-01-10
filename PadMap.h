@@ -20,7 +20,10 @@ namespace mcopt
     class PadMap
     {
     public:
+        PadMap() = default;
         PadMap(const std::string& path);
+
+        void insert(const int cobo, const int asad, const int aget, const int channel, const pad_t pad);
 
         pad_t find(const int cobo, const int asad, const int aget, const int channel) const;
         Address reverseFind(const pad_t pad) const;
