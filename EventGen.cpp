@@ -101,8 +101,10 @@ namespace mcopt
         return res;
     }
 
-    // bool Trigger::didTrigger(const std::map<pad_t, Peak>& peaks) const
-    // {
-    //
-    // }
+    bool Trigger::didTrigger(const std::map<pad_t, Peak>& peaks) const
+    {
+        arma::mat sigs = applyMultiplicityWindow(findTriggerSignals(peaks));
+        arma::vec maxes = arma::max(sigs, 1);
+        return arma::any(maxes > multThresh);
+    }
 }

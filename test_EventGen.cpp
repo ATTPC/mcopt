@@ -175,4 +175,30 @@ TEST_CASE("Trigger class works", "[trigger]")
 
         REQUIRE(arma::accu(mult - expected) < 1e-6);
     }
+
+    SECTION("didTrigger function triggers when above multThresh")
+    {
+        mcopt::PadMap padmap;
+        for (mcopt::pad_t p = 0; p < 512; p++) {
+            padmap.insert(0, 0, 0, 0, p);
+        }
+
+        mcopt::Trigger trig (padThreshMSB, padThreshLSB, trigWidth, multThresh, multWindow,
+                             writeCk, gain, discrFrac, padmap);
+
+        std::map<mcopt::pad_t, mcopt::Peak> peaks;
+        for (unsigned i = 0; i < 512; i++) {
+            peaks.emplace(i, mcopt::Peak{10, 20000});
+        }
+
+        REQUIRE(trig.didTrigger(peaks));
+    }
+
+    SECTION("didTrigger function does not trigger when below threshold")
+    {
+        std::map<mcopt::pad_t, mcopt::Peak> peaks;
+        peaks.emplace(0, mcopt::Peak{10, 20000});
+
+        REQUIRE_FALSE(trig.didTrigger(peaks));
+    }
 }
