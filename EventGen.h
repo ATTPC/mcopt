@@ -3,7 +3,6 @@
 
 #include <armadillo>
 #include <map>
-#include <algorithm>
 #include <vector>
 #include <cassert>
 #include <cmath>
