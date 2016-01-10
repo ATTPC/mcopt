@@ -128,25 +128,25 @@ TEST_CASE("Trigger class works", "[trigger]")
 
         CAPTURE(trig.getPadThresh());
 
-        auto res = trig.findTriggerSignals(peaks);
+        arma::mat res = trig.findTriggerSignals(peaks);
 
         SECTION("Signals below pad threshold do not trigger")
         {
-            const arma::vec& v = res.at(0);
+            const arma::rowvec& v = res.row(0);
             CAPTURE(arma::nonzeros(v));
             REQUIRE(arma::accu(v) < 1e-6);
         }
 
         SECTION("Signals above pad threshold do trigger")
         {
-            const arma::vec& v = res.at(1);
+            const arma::rowvec& v = res.row(1);
             CAPTURE(arma::nonzeros(v));
             REQUIRE(arma::accu(v) > 0);
         }
 
         SECTION("Trigger pulse shape is right")
         {
-            const arma::vec& pulse = res.at(1);
+            const arma::rowvec& pulse = res.row(1);
             arma::vec nz = arma::nonzeros(pulse);
             double width = nz.n_rows;
             CAPTURE(width);
@@ -166,7 +166,6 @@ TEST_CASE("Trigger class works", "[trigger]")
         trigSignals(arma::span(0, 5), arma::span(5, 10)).fill(50);
 
         arma::mat mult = trig.applyMultiplicityWindow(trigSignals);
-        std::cout << "Found mult" << std::endl;
 
         arma::mat expected (arma::size(trigSignals), arma::fill::zeros);
         for (arma::uword j = 5; j < 10; j++) {

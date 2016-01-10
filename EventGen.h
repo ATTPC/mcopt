@@ -34,8 +34,9 @@ namespace mcopt
                 const unsigned long multThresh, const unsigned long multWindow, const double writeCk,
                 const double gain, const double discrFrac, const PadMap& padmap);
 
-        std::vector<arma::vec> findTriggerSignals(const std::map<uint16_t, Peak>& peaks) const;
+        arma::mat findTriggerSignals(const std::map<pad_t, Peak>& peaks) const;
         arma::mat applyMultiplicityWindow(const arma::mat& trigs) const;
+        bool didTrigger(const std::map<pad_t, Peak>& peaks) const;
 
         double getPadThresh() const { return padThresh; }
         unsigned long getMultWindow() const { return multWindow; }

@@ -72,9 +72,9 @@ namespace mcopt
         this->multWindow = std::lround(multWindow / masterCk * writeCk);
     }
 
-    std::vector<arma::vec> Trigger::findTriggerSignals(const std::map<uint16_t, Peak>& peaks) const
+    arma::mat Trigger::findTriggerSignals(const std::map<pad_t, Peak>& peaks) const
     {
-        std::vector<arma::vec> res (10, arma::vec(512, arma::fill::zeros));
+        arma::mat res (10, 512, arma::fill::zeros);
         for (const auto& pair : peaks) {
             const auto& pad = pair.first;
             const auto& peak = pair.second;
@@ -85,7 +85,7 @@ namespace mcopt
             assert(cobo != padmap.missingValue);
 
             arma::vec sig = squareWave(512, peak.timeBucket, trigWidth, trigHeight);
-            res.at(cobo) += sig;
+            res.row(cobo) += sig.t();
         }
         return res;
     }
@@ -100,4 +100,9 @@ namespace mcopt
         }
         return res;
     }
+
+    // bool Trigger::didTrigger(const std::map<pad_t, Peak>& peaks) const
+    // {
+    //
+    // }
 }
