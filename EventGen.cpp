@@ -31,7 +31,7 @@ namespace mcopt
                          const arma::uword width, const double height)
     {
         arma::vec res (size, arma::fill::zeros);
-        for (arma::uword i = leftEdge; i < leftEdge + width; i++) {
+        for (arma::uword i = leftEdge; i < leftEdge + width && i < size; i++) {
             res(i) = height;
         }
         return res;
@@ -106,7 +106,6 @@ namespace mcopt
     {
         arma::mat sigs = applyMultiplicityWindow(findTriggerSignals(peaks));
         arma::vec maxes = arma::max(sigs, 1);
-        std::cout << arma::max(maxes) << std::endl;
         return arma::any(maxes > multThresh);
     }
 }
