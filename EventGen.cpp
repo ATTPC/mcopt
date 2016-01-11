@@ -8,7 +8,7 @@ namespace mcopt
     {
         arma::mat trMat = tr.getMatrix();
         arma::mat pos = trMat.cols(0, 2);
-        arma::mat result = pos + pos.col(2) * -vd.t() / clock * 10;
+        arma::mat result = pos + pos.col(2) * -vd.t() / (clock * 100);
         result.col(2) -= pos.col(2);
 
         return result;
@@ -19,9 +19,9 @@ namespace mcopt
         arma::mat trMat = tr.getMatrix();
         arma::mat pos = trMat.cols(0, 2);
 
-        arma::vec tbs = pos.col(2) * clock / (10 * -vd(2)) + offset;
+        arma::vec tbs = pos.col(2) * clock * 100 / (-vd(2)) + offset;
 
-        arma::mat result = pos - tbs * -vd.t() / clock * 10;
+        arma::mat result = pos - tbs * -vd.t() / (clock * 100);
         result.col(2) = tbs;
 
         return result;
@@ -38,12 +38,13 @@ namespace mcopt
     }
 
     std::map<uint16_t, Peak> makePeaksFromSimulation(const PadPlane& pads, const Track& tr, const arma::vec& vd,
-                                                     const double clock, const int massNum, const double ioniz)
+                                                     const double clock, const int massNum, const double ioniz,
+                                                     const unsigned gain)
     {
         arma::mat uncal = uncalibrate(tr, vd, clock);
         arma::vec en = tr.getEnergyVector() * 1e6 * massNum;
         assert(en.n_rows == uncal.n_rows);
-        arma::uvec ne = arma::conv_to<arma::uvec>::from(arma::floor(-arma::diff(en) / ioniz));
+        arma::uvec ne = arma::conv_to<arma::uvec>::from(arma::floor(-arma::diff(en) / ioniz)) * gain;
         arma::Col<unsigned> tbs = arma::conv_to<arma::Col<unsigned>>::from(arma::floor(uncal.col(2)));
 
         std::map<uint16_t, Peak> result;
@@ -105,6 +106,7 @@ namespace mcopt
     {
         arma::mat sigs = applyMultiplicityWindow(findTriggerSignals(peaks));
         arma::vec maxes = arma::max(sigs, 1);
+        std::cout << arma::max(maxes) << std::endl;
         return arma::any(maxes > multThresh);
     }
 }

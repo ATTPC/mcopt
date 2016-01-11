@@ -21,9 +21,9 @@ TEST_CASE("Calibration and uncalibration work", "[eventGenerator]")
 
         for (arma::uword i = 0; i < cal.n_rows; i++) {
             // We need a minus here because of the sign of vd...
-            double xExp = orig_data(i, 0) + (-vd(0)) * orig_data(i, 2) / clock * 10;
-            double yExp = orig_data(i, 1) + (-vd(1)) * orig_data(i, 2) / clock * 10;
-            double zExp =                 + (-vd(2)) * orig_data(i, 2) / clock * 10;
+            double xExp = orig_data(i, 0) + (-vd(0)) * orig_data(i, 2) / (clock * 100);
+            double yExp = orig_data(i, 1) + (-vd(1)) * orig_data(i, 2) / (clock * 100);
+            double zExp =                 + (-vd(2)) * orig_data(i, 2) / (clock * 100);
 
             CAPTURE(i);
             CAPTURE(orig_data(i, 0));

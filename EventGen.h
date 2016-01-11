@@ -24,7 +24,8 @@ namespace mcopt
     };
 
     std::map<uint16_t, Peak> makePeaksFromSimulation(const PadPlane& pads, const Track& tr, const arma::vec& vd,
-                                                     const double clock, const int massNum, const double ioniz);
+                                                     const double clock, const int massNum, const double ioniz,
+                                                     const unsigned gain=1);
 
     class Trigger
     {
