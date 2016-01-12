@@ -6,11 +6,12 @@
 
 TEST_CASE("Calculated deviations are correct", "[deviations]")
 {
-    arma::mat A (20, 3);
+    arma::mat A (20, 4);
 
     A.col(0) = arma::linspace<arma::vec>(0, 20, 20);
     A.col(1) = arma::linspace<arma::vec>(0, 20, 20);
     A.col(2) = arma::linspace<arma::vec>(0, 20, 20);
+    A.col(3) = arma::linspace<arma::vec>(0, 20, 20);
 
     SECTION("Two equal arrays have zero deviation")
     {
@@ -56,11 +57,11 @@ TEST_CASE("Calculated deviations are correct", "[deviations]")
     }
 }
 
-TEST_CASE("Minimizer works", "[minimizer]")
+TEST_CASE("Tracking results can be prepared", "[deviations]")
 {
     arma::arma_rng::set_seed(12345);
 
-    arma::mat trueValues = arma::randu<arma::mat>(100, 3);
+    arma::mat trueValues = arma::randu<arma::mat>(20, 4);
 
     std::vector<double> eloss = arma::conv_to<std::vector<double>>::from(arma::randu<arma::vec>(100000));
 
@@ -68,13 +69,44 @@ TEST_CASE("Minimizer works", "[minimizer]")
     unsigned chargeNum = 1;
     arma::vec3 efield {0, 0, 1e3};
     arma::vec3 bfield {0, 0, 1};
+    double ioniz = 10;
+
+    mcopt::MCminimizer minimizer {massNum, chargeNum, eloss, efield, bfield, ioniz};
+
+    arma::mat simtrack = arma::randu<arma::mat>(20, 7);
+    arma::mat prepared = minimizer.prepareSimulatedTrackMatrix(simtrack);
+    INFO("Finished preparing matrix.");
+
+    arma::vec expectDe (20, arma::fill::zeros);
+    expectDe.tail(19) = -arma::diff(simtrack.col(4)) * 1e6 / ioniz;
+    INFO("Found expected-delta-E vector.")
+
+    CHECK(arma::accu(arma::abs(prepared.col(0) - simtrack.col(0))) < 1e-6);
+    CHECK(arma::accu(arma::abs(prepared.col(1) - simtrack.col(1))) < 1e-6);
+    CHECK(arma::accu(arma::abs(prepared.col(2) - simtrack.col(2))) < 1e-6);
+    CHECK(arma::accu(arma::abs(prepared.col(3) - expectDe)) < 1e-6);
+}
+
+TEST_CASE("Minimizer works", "[minimizer]")
+{
+    arma::arma_rng::set_seed(12345);
+
+    arma::mat trueValues = arma::randu<arma::mat>(100, 4);
+
+    std::vector<double> eloss = arma::conv_to<std::vector<double>>::from(arma::randu<arma::vec>(100000));
+
+    unsigned massNum = 1;
+    unsigned chargeNum = 1;
+    arma::vec3 efield {0, 0, 1e3};
+    arma::vec3 bfield {0, 0, 1};
+    double ioniz = 10;
 
     arma::vec ctr0 = {0, 0, 0.9, 1, 0, arma::datum::pi, 0};
     arma::vec sigma = {0, 0, 0.001, 0.5, 0.2, 0.2, 0.1};
 
     SECTION("Minimizer doesn't throw")
     {
-        mcopt::MCminimizer minimizer {massNum, chargeNum, eloss, efield, bfield};
+        mcopt::MCminimizer minimizer {massNum, chargeNum, eloss, efield, bfield, ioniz};
 
         REQUIRE_NOTHROW(
             minimizer.minimize(ctr0, sigma, trueValues, 2, 50, 0.8);
@@ -84,7 +116,7 @@ TEST_CASE("Minimizer works", "[minimizer]")
     SECTION("Minimizer doesn't throw when eloss is tiny")
     {
         eloss = arma::conv_to<std::vector<double>>::from(arma::randu<arma::vec>(100));
-        mcopt::MCminimizer minimizer {massNum, chargeNum, eloss, efield, bfield};
+        mcopt::MCminimizer minimizer {massNum, chargeNum, eloss, efield, bfield, ioniz};
 
         ctr0(3) = 10;  // raise the energy
 

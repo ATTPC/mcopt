@@ -30,14 +30,36 @@ namespace mcopt
     arma::mat MCminimizer::findDeviations(const arma::mat& simtrack, const arma::mat& expdata)
     {
         // ASSUMPTION: matrices must be sorted in increasing Z order.
+        // Assume also that the matrices are structured as:
+        //     (x, y, z, de, ...)
 
         arma::vec xInterp;
         arma::vec yInterp;
+        arma::vec enInterp;
 
         arma::interp1(simtrack.col(2), simtrack.col(0), expdata.col(2), xInterp);
         arma::interp1(simtrack.col(2), simtrack.col(1), expdata.col(2), yInterp);
+        arma::interp1(simtrack.col(2), simtrack.col(3), expdata.col(2), enInterp);
 
-        return arma::join_horiz(xInterp - expdata.col(0), yInterp - expdata.col(1));
+        arma::mat result (xInterp.n_rows, 3);
+        result.col(0) = xInterp - expdata.col(0);
+        result.col(1) = yInterp - expdata.col(1);
+        result.col(2) = enInterp - expdata.col(3);
+
+        return result;
+    }
+
+    arma::mat MCminimizer::prepareSimulatedTrackMatrix(const arma::mat& simtrack) const
+    {
+        // Simulation has columns (x, y, z, time, enu, azi, pol).
+        // Need to output (x, y, z, de)
+
+        arma::mat result (simtrack.n_rows, 4, arma::fill::zeros);
+
+        result.cols(0, 2) = simtrack.cols(0, 2);
+        result.col(3).tail(result.n_rows-1) = -arma::diff(simtrack.col(4)) * 1e6 / ioniz;
+
+        return result;
     }
 
     double MCminimizer::runTrack(const arma::vec& p, const arma::mat& trueValues) const
@@ -52,10 +74,11 @@ namespace mcopt
 
         double chi2 = 0;
         if (simtrack.n_rows > 10 and (zlenSim - zlenTrue) >= -0.05) {
-            arma::mat devs = findDeviations(simtrack, trueValues);
-            arma::vec temp = dropNaNs(arma::sum(arma::square(devs), 1));
-            if (!temp.is_empty()) {
-                chi2 = arma::median(temp);
+            arma::mat simtrackMat = prepareSimulatedTrackMatrix(simtrack);
+            arma::mat devs = findDeviations(simtrackMat, trueValues);
+            arma::vec validDevs = dropNaNs(arma::sum(arma::square(devs), 1));
+            if (!validDevs.is_empty()) {
+                chi2 = arma::median(validDevs);
             }
             else {
                 chi2 = 200;

@@ -16,12 +16,14 @@ namespace mcopt
     {
     public:
         MCminimizer(const unsigned massNum, const unsigned chargeNum, const std::vector<double>& eloss,
-                    const arma::vec3& efield, const arma::vec3& bfield)
-            : efield(efield), bfield(bfield), tracker(Tracker(massNum, chargeNum, eloss, efield, bfield)) {}
+                    const arma::vec3& efield, const arma::vec3& bfield, const double ioniz)
+            : efield(efield), bfield(bfield), tracker(Tracker(massNum, chargeNum, eloss, efield, bfield)),
+              ioniz(ioniz) {}
 
         static arma::mat makeParams(const arma::vec& ctr, const arma::vec& sigma, const unsigned numSets,
                                     const arma::vec& mins, const arma::vec& maxes);
         static arma::mat findDeviations(const arma::mat& simtrack, const arma::mat& expdata);
+        arma::mat prepareSimulatedTrackMatrix(const arma::mat& simtrack) const;
         double runTrack(const arma::vec& p, const arma::mat& trueValues) const;
         MCminimizeResult minimize(const arma::vec& ctr0, const arma::vec& sigma0, const arma::mat& trueValues,
                                   const unsigned numIters, const unsigned numPts, const double redFactor) const;
@@ -30,6 +32,7 @@ namespace mcopt
         arma::vec3 efield;
         arma::vec3 bfield;
         Tracker tracker;
+        const double ioniz;
     };
 }
 
