@@ -3,6 +3,7 @@
 
 #include <armadillo>
 #include <vector>
+#include <tuple>
 #include "Tracker.h"
 #include "Track.h"
 
