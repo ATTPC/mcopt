@@ -42,9 +42,9 @@ namespace mcopt
         arma::interp1(simtrack.col(2), simtrack.col(3), expdata.col(2), enInterp);
 
         arma::mat result (xInterp.n_rows, 3);
-        result.col(0) = (xInterp - expdata.col(0)); // / arma::max(arma::abs(expdata.col(0)));
-        result.col(1) = (yInterp - expdata.col(1)); // / arma::max(arma::abs(expdata.col(1)));
-        result.col(2) = 0; //(enInterp - expdata.col(3)) / arma::max(arma::abs(expdata.col(3)));
+        result.col(0) = (xInterp - expdata.col(0));  // Valid?
+        result.col(1) = (yInterp - expdata.col(1));
+        result.col(2) = (enInterp - expdata.col(3)) / 50;
 
         return result;
     }
@@ -116,6 +116,9 @@ namespace mcopt
         arma::uword numVars = ctr0.n_rows;
 
         arma::vec mins = ctr0 - sigma0 / 2;
+        if (mins(3) < 0) {
+            mins(3) = 0;  // Prevent energy from being negative
+        }
         arma::vec maxes = ctr0 + sigma0 / 2;
         arma::vec ctr = ctr0;
         arma::vec sigma = sigma0;
