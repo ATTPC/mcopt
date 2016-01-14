@@ -44,7 +44,7 @@ namespace mcopt
         arma::mat result (xInterp.n_rows, 3);
         result.col(0) = (xInterp - expdata.col(0));  // Valid?
         result.col(1) = (yInterp - expdata.col(1));
-        result.col(2) = (enInterp - expdata.col(3)) / 50;
+        result.col(2) = (enInterp - expdata.col(3)) / expdata.col(3).max();
 
         return result;
     }
