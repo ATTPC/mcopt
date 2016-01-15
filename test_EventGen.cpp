@@ -202,3 +202,35 @@ TEST_CASE("Trigger class works", "[trigger]")
         REQUIRE_FALSE(trig.didTrigger(peaks));
     }
 }
+
+TEST_CASE("GET electronics pulse function is correct", "[elecPulse]")
+{
+    double ampl = 3.5;
+    double shape = 500e-9;  // s
+    double clock = 12.5e6;  // Hz
+    unsigned offset = 10;
+
+    arma::vec pulse = mcopt::elecPulse(ampl, shape, clock, offset);
+    CAPTURE(pulse);
+
+    SECTION("The pulse is zero until the offset value.")
+    {
+        for (unsigned i = 0; i <= offset; i++) {
+            REQUIRE(std::abs(pulse(i)) < 1e-6);
+        }
+    }
+
+    SECTION("The pulse rises above zero after the offset")
+    {
+        for (unsigned i = offset + 1; i < offset + 5; i++) {
+            REQUIRE(pulse(i) > 0);
+        }
+    }
+
+    SECTION("The pulse eventually comes back near zero")
+    {
+        for (unsigned i = 500; i < 512; i++) {
+            REQUIRE(std::abs(pulse(i)) < 1.0);
+        }
+    }
+}

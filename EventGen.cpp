@@ -37,6 +37,19 @@ namespace mcopt
         return res;
     }
 
+    arma::vec elecPulse(const double amplitude, const double shape, const double clock, const arma::uword offset)
+    {
+        arma::vec res (512, arma::fill::zeros);
+
+        double s = shape * clock;  // IMPORTANT: shape and clock must have compatible units, e.g. MHz and us.
+
+        for (arma::uword i = offset; i < res.n_rows; i++) {
+            double t = (i - offset) / s;
+            res(i) = amplitude * std::exp(-3*t) * std::sin(t) * std::pow(t, 3);
+        }
+        return res;
+    }
+
     std::map<uint16_t, Peak> makePeaksFromSimulation(const PadPlane& pads, const Track& tr, const arma::vec& vd,
                                                      const double clock, const int massNum, const double ioniz,
                                                      const unsigned gain)

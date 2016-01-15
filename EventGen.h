@@ -2,6 +2,7 @@
 #define MCOPT_EVENTGEN_H
 
 #include <armadillo>
+#include <cmath>
 #include <map>
 #include <vector>
 #include <cassert>
@@ -16,6 +17,7 @@ namespace mcopt
     arma::mat uncalibrate(const Track& tr, const arma::vec& vd, const double clock, const int offset=0);
     arma::vec squareWave(const arma::uword size, const arma::uword leftEdge,
                          const arma::uword width, const double height);
+    arma::vec elecPulse(const double amplitude, const double shape, const double clock, const arma::uword offset);
 
     struct Peak
     {
@@ -26,6 +28,10 @@ namespace mcopt
     std::map<uint16_t, Peak> makePeaksFromSimulation(const PadPlane& pads, const Track& tr, const arma::vec& vd,
                                                      const double clock, const int massNum, const double ioniz,
                                                      const unsigned gain=1);
+
+    std::map<pad_t, arma::vec> makeEvent(const PadPlane& pads, const Track& tr, const arma::vec& vd,
+                                         const double clock, const int massNum, const double ioniz,
+                                         const unsigned gain=1);
 
     class Trigger
     {
