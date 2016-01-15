@@ -50,9 +50,7 @@ namespace mcopt
         return res;
     }
 
-    std::map<uint16_t, Peak> makePeaksFromSimulation(const PadPlane& pads, const Track& tr, const arma::vec& vd,
-                                                     const double clock, const int massNum, const double ioniz,
-                                                     const unsigned gain)
+    std::map<pad_t, arma::vec> EventGenerator::makeEvent(const Track& tr) const
     {
         arma::mat uncal = uncalibrate(tr, vd, clock);
         arma::vec en = tr.getEnergyVector() * 1e6 * massNum;
@@ -60,21 +58,34 @@ namespace mcopt
         arma::uvec ne = arma::conv_to<arma::uvec>::from(arma::floor(-arma::diff(en) / ioniz)) * gain;
         arma::Col<unsigned> tbs = arma::conv_to<arma::Col<unsigned>>::from(arma::floor(uncal.col(2)));
 
-        std::map<uint16_t, Peak> result;
+        std::map<pad_t, arma::vec> result;
 
         for (arma::uword i = 0; i < uncal.n_rows - 1; i++) {
-            uint16_t pad = pads.getPadNumberFromCoordinates(uncal(i, 0), uncal(i, 1));
+            pad_t pad = pads.getPadNumberFromCoordinates(uncal(i, 0), uncal(i, 1));
             if (pad != 20000) {
-                auto& pk = result[pad];
-                arma::uword ampl = ne(i);
-                if (pk.amplitude < ampl) {
-                    pk.timeBucket = tbs(i);
-                    pk.amplitude = ampl;
+                arma::vec& padSignal = result[pad];
+                if (padSignal.is_empty()) {
+                    // This means that the signal was just default-constructed by std::map::operator[]
+                    padSignal.zeros(512);
                 }
+                padSignal += elecPulse(gain * ne(i), shape, clock, tbs(i));
             }
         }
 
         return result;
+    }
+
+    std::map<pad_t, Peak> EventGenerator::makePeaksFromSimulation(const Track& tr) const
+    {
+        std::map<pad_t, arma::vec> evt = makeEvent(tr);
+
+        std::map<pad_t, Peak> res;
+        for (const auto& pair : evt) {
+            arma::uword maxTB;
+            unsigned maxVal = std::floor(pair.second.max(maxTB));  // This stores the location of the max in its argument
+            res.emplace(pair.first, Peak{static_cast<unsigned>(maxTB), maxVal});
+        }
+        return res;
     }
 
     Trigger::Trigger(const unsigned int padThreshMSB, const unsigned int padThreshLSB, const double trigWidth,
