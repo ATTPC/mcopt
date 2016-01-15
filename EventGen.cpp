@@ -52,7 +52,12 @@ namespace mcopt
         for (arma::uword i = 0; i < uncal.n_rows - 1; i++) {
             uint16_t pad = pads.getPadNumberFromCoordinates(uncal(i, 0), uncal(i, 1));
             if (pad != 20000) {
-                result.emplace(pad, Peak{tbs(i), ne(i)});
+                auto& pk = result[pad];
+                arma::uword ampl = ne(i);
+                if (pk.amplitude < ampl) {
+                    pk.timeBucket = tbs(i);
+                    pk.amplitude = ampl;
+                }
             }
         }
 
