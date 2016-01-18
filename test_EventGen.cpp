@@ -8,7 +8,7 @@ TEST_CASE("Calibration and uncalibration work", "[eventGenerator]")
     for (int i = 0; i < 512; i++) {
         tr.append(-200+i, -200+i, i, 0, 0, 0, 0);
     }
-    double clock = 10;
+    double clock = 10e6;
     arma::vec vd = {0, 0.5, 1};
 
     SECTION("Calibration works")
@@ -21,9 +21,9 @@ TEST_CASE("Calibration and uncalibration work", "[eventGenerator]")
 
         for (arma::uword i = 0; i < cal.n_rows; i++) {
             // We need a minus here because of the sign of vd...
-            double xExp = orig_data(i, 0) + (-vd(0)) * orig_data(i, 2) / (clock * 100);
-            double yExp = orig_data(i, 1) + (-vd(1)) * orig_data(i, 2) / (clock * 100);
-            double zExp =                 + (-vd(2)) * orig_data(i, 2) / (clock * 100);
+            double xExp = orig_data(i, 0) + (-vd(0)) * orig_data(i, 2) / (clock * 1e-4);
+            double yExp = orig_data(i, 1) + (-vd(1)) * orig_data(i, 2) / (clock * 1e-4);
+            double zExp =                 + (-vd(2)) * orig_data(i, 2) / (clock * 1e-4);
 
             CAPTURE(i);
             CAPTURE(orig_data(i, 0));

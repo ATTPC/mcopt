@@ -30,7 +30,7 @@ namespace mcopt
     public:
         EventGenerator(const PadPlane& pads, const arma::vec& vd, const double clock, const double shape,
                        const int massNum, const double ioniz, const unsigned gain=1)
-            : pads(pads), vd(vd), clock(clock * 1e6), shape(shape), massNum(massNum), ioniz(ioniz), gain(gain) {}
+            : pads(pads), vd(vd), clock(clock), shape(shape), massNum(massNum), ioniz(ioniz), gain(gain) {}
 
         std::map<pad_t, arma::vec> makeEvent(const Track& tr) const;
         std::map<uint16_t, Peak> makePeaksFromSimulation(const Track& tr) const;
