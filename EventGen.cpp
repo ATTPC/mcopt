@@ -70,7 +70,12 @@ namespace mcopt
                     // This means that the signal was just default-constructed by std::map::operator[]
                     padSignal.zeros(512);
                 }
-                padSignal += elecPulse(gain * ne(i), shape, clock, tbs(i));
+                unsigned offset = tbs(i);
+
+                // Use a precalculated pulse shape that just needs to be scaled and shifted. This is much faster.
+                arma::vec pulse (512, arma::fill::zeros);
+                pulse(arma::span(offset, 511)) = gain * ne(i) * pulseTemplate(arma::span(0, 511-offset));
+                padSignal += pulse;
             }
         }
 
