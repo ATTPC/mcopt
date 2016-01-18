@@ -7,6 +7,7 @@
 #include <vector>
 #include <cassert>
 #include <cmath>
+#include <algorithm>
 #include "Track.h"
 #include "PadPlane.h"
 #include "PadMap.h"
@@ -35,6 +36,7 @@ namespace mcopt
 
         std::map<pad_t, arma::vec> makeEvent(const Track& tr) const;
         std::map<uint16_t, Peak> makePeaksFromSimulation(const Track& tr) const;
+        arma::vec makeMeshSignal(const Track& tr) const;
 
     private:
         const PadPlane pads;

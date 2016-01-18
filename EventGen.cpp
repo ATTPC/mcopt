@@ -95,6 +95,18 @@ namespace mcopt
         return res;
     }
 
+    arma::vec EventGenerator::makeMeshSignal(const Track& tr) const
+    {
+        std::map<pad_t, arma::vec> evt = makeEvent(tr);
+        arma::vec res (512, arma::fill::zeros);
+
+        for (const auto& pair : evt) {
+            res += pair.second;
+        }
+
+        return res;
+    }
+
     Trigger::Trigger(const unsigned int padThreshMSB, const unsigned int padThreshLSB, const double trigWidth,
             const unsigned long multThresh, const unsigned long multWindow, const double writeCk,
             const double gain, const double discrFrac, const PadMap& padmap)
