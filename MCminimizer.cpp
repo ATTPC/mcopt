@@ -57,7 +57,7 @@ namespace mcopt
         arma::mat result (simtrack.n_rows, 4, arma::fill::zeros);
 
         result.cols(0, 2) = simtrack.cols(0, 2);
-        result.col(3).tail(result.n_rows-1) = -arma::diff(simtrack.col(4)) * 1e6 / ioniz;
+        result.col(3).tail(result.n_rows-1) = -arma::diff(simtrack.col(4));
 
         return result;
     }

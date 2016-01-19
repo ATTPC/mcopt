@@ -71,7 +71,7 @@ TEST_CASE("Tracking results can be prepared", "[deviations]")
     arma::vec3 bfield {0, 0, 1};
     double ioniz = 10;
 
-    mcopt::MCminimizer minimizer {massNum, chargeNum, eloss, efield, bfield, ioniz};
+    mcopt::MCminimizer minimizer (mcopt::Tracker(massNum, chargeNum, eloss, efield, bfield));
 
     arma::mat simtrack = arma::randu<arma::mat>(20, 7);
     arma::mat prepared = minimizer.prepareSimulatedTrackMatrix(simtrack);
@@ -106,7 +106,7 @@ TEST_CASE("Minimizer works", "[minimizer]")
 
     SECTION("Minimizer doesn't throw")
     {
-        mcopt::MCminimizer minimizer {massNum, chargeNum, eloss, efield, bfield, ioniz};
+        mcopt::MCminimizer minimizer (mcopt::Tracker(massNum, chargeNum, eloss, efield, bfield));
 
         REQUIRE_NOTHROW(
             minimizer.minimize(ctr0, sigma, trueValues, 2, 50, 0.8);
@@ -116,7 +116,7 @@ TEST_CASE("Minimizer works", "[minimizer]")
     SECTION("Minimizer doesn't throw when eloss is tiny")
     {
         eloss = arma::conv_to<std::vector<double>>::from(arma::randu<arma::vec>(100));
-        mcopt::MCminimizer minimizer {massNum, chargeNum, eloss, efield, bfield, ioniz};
+        mcopt::MCminimizer minimizer (mcopt::Tracker(massNum, chargeNum, eloss, efield, bfield));
 
         ctr0(3) = 10;  // raise the energy
 

@@ -6,6 +6,7 @@
 #include <tuple>
 #include "Tracker.h"
 #include "Track.h"
+#include "EventGen.h"
 
 namespace mcopt
 {
@@ -16,10 +17,8 @@ namespace mcopt
     class MCminimizer
     {
     public:
-        MCminimizer(const unsigned massNum, const unsigned chargeNum, const std::vector<double>& eloss,
-                    const arma::vec3& efield, const arma::vec3& bfield, const double ioniz)
-            : efield(efield), bfield(bfield), tracker(Tracker(massNum, chargeNum, eloss, efield, bfield)),
-              ioniz(ioniz) {}
+        MCminimizer(const Tracker& tracker)
+            : tracker(tracker) {}
 
         static arma::mat makeParams(const arma::vec& ctr, const arma::vec& sigma, const unsigned numSets,
                                     const arma::vec& mins, const arma::vec& maxes);
@@ -30,10 +29,7 @@ namespace mcopt
                                   const unsigned numIters, const unsigned numPts, const double redFactor) const;
 
     private:
-        arma::vec3 efield;
-        arma::vec3 bfield;
         Tracker tracker;
-        const double ioniz;
     };
 }
 
