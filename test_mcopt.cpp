@@ -16,7 +16,7 @@ TEST_CASE("Calculated deviations are correct", "[deviations]")
     SECTION("Two equal arrays have zero deviation")
     {
         arma::mat B = A;
-        arma::mat devs = mcopt::MCminimizer::findDeviations(A, B);
+        arma::mat devs = mcopt::MCminimizer::findPositionDeviations(A, B);
 
         INFO("A = " << A);
         INFO("B = " << B);
@@ -29,7 +29,7 @@ TEST_CASE("Calculated deviations are correct", "[deviations]")
         const double c = 100;
         arma::mat B = A;
         B.col(0) += c;
-        arma::mat devs = mcopt::MCminimizer::findDeviations(A, B);
+        arma::mat devs = mcopt::MCminimizer::findPositionDeviations(A, B);
 
         INFO("c = " << c);
         INFO("A = " << A);
@@ -45,7 +45,7 @@ TEST_CASE("Calculated deviations are correct", "[deviations]")
         const double c = 100;
         arma::mat B = A;
         B.col(1) += c;
-        arma::mat devs = mcopt::MCminimizer::findDeviations(A, B);
+        arma::mat devs = mcopt::MCminimizer::findPositionDeviations(A, B);
 
         INFO("c = " << c);
         INFO("A = " << A);
@@ -57,41 +57,12 @@ TEST_CASE("Calculated deviations are correct", "[deviations]")
     }
 }
 
-TEST_CASE("Tracking results can be prepared", "[deviations]")
-{
-    arma::arma_rng::set_seed(12345);
-
-    arma::mat trueValues = arma::randu<arma::mat>(20, 4);
-
-    std::vector<double> eloss = arma::conv_to<std::vector<double>>::from(arma::randu<arma::vec>(100000));
-
-    unsigned massNum = 1;
-    unsigned chargeNum = 1;
-    arma::vec3 efield {0, 0, 1e3};
-    arma::vec3 bfield {0, 0, 1};
-    double ioniz = 10;
-
-    mcopt::MCminimizer minimizer (mcopt::Tracker(massNum, chargeNum, eloss, efield, bfield));
-
-    arma::mat simtrack = arma::randu<arma::mat>(20, 7);
-    arma::mat prepared = minimizer.prepareSimulatedTrackMatrix(simtrack);
-    INFO("Finished preparing matrix.");
-
-    arma::vec expectDe (20, arma::fill::zeros);
-    expectDe.tail(19) = -arma::diff(simtrack.col(4)) * 1e6 / ioniz;
-    INFO("Found expected-delta-E vector.")
-
-    CHECK(arma::accu(arma::abs(prepared.col(0) - simtrack.col(0))) < 1e-6);
-    CHECK(arma::accu(arma::abs(prepared.col(1) - simtrack.col(1))) < 1e-6);
-    CHECK(arma::accu(arma::abs(prepared.col(2) - simtrack.col(2))) < 1e-6);
-    CHECK(arma::accu(arma::abs(prepared.col(3) - expectDe)) < 1e-6);
-}
-
 TEST_CASE("Minimizer works", "[minimizer]")
 {
     arma::arma_rng::set_seed(12345);
 
-    arma::mat trueValues = arma::randu<arma::mat>(100, 4);
+    arma::mat expPos = arma::randu<arma::mat>(100, 4);
+    arma::vec expMesh = arma::randu<arma::vec>(512);
 
     std::vector<double> eloss = arma::conv_to<std::vector<double>>::from(arma::randu<arma::vec>(100000));
 
@@ -100,28 +71,41 @@ TEST_CASE("Minimizer works", "[minimizer]")
     arma::vec3 efield {0, 0, 1e3};
     arma::vec3 bfield {0, 0, 1};
     double ioniz = 10;
+    arma::vec3 vd {0, 0, 10};
+    double gain = 1;
+    double tilt = 0;
+    double shape = 200e-9;
+    double clock = 12.5e6;
 
     arma::vec ctr0 = {0, 0, 0.9, 1, 0, arma::datum::pi, 0};
     arma::vec sigma = {0, 0, 0.001, 0.5, 0.2, 0.2, 0.1};
 
+    mcopt::Tracker tracker (massNum, chargeNum, eloss, efield, bfield);
+
+    arma::Mat<mcopt::pad_t> mockLUT =
+        arma::conv_to<arma::Mat<mcopt::pad_t>>::from(arma::round(arma::randu<arma::mat>(5600, 5600) * 10000));
+    mcopt::PadPlane pads (mockLUT, -0.280, 0.0001, -0.280, 0.0001, 0);
+    mcopt::EventGenerator evtgen (pads, vd, clock, shape, massNum, ioniz, gain, tilt);
+
     SECTION("Minimizer doesn't throw")
     {
-        mcopt::MCminimizer minimizer (mcopt::Tracker(massNum, chargeNum, eloss, efield, bfield));
+        mcopt::MCminimizer minimizer (tracker, evtgen);
 
         REQUIRE_NOTHROW(
-            minimizer.minimize(ctr0, sigma, trueValues, 2, 50, 0.8);
+            minimizer.minimize(ctr0, sigma, expPos, expMesh, 2, 50, 0.8);
         );
     }
 
     SECTION("Minimizer doesn't throw when eloss is tiny")
     {
         eloss = arma::conv_to<std::vector<double>>::from(arma::randu<arma::vec>(100));
-        mcopt::MCminimizer minimizer (mcopt::Tracker(massNum, chargeNum, eloss, efield, bfield));
+        mcopt::Tracker tracker (massNum, chargeNum, eloss, efield, bfield);
+        mcopt::MCminimizer minimizer (tracker, evtgen);
 
         ctr0(3) = 10;  // raise the energy
 
         REQUIRE_NOTHROW(
-            minimizer.minimize(ctr0, sigma, trueValues, 2, 50, 0.8);
+            minimizer.minimize(ctr0, sigma, expPos, expMesh, 2, 50, 0.8);
         );
     }
 }

@@ -27,62 +27,58 @@ namespace mcopt
         }
     }
 
-    arma::mat MCminimizer::findDeviations(const arma::mat& simtrack, const arma::mat& expdata)
+    arma::mat MCminimizer::findPositionDeviations(const arma::mat& simPos, const arma::mat& expPos)
     {
         // ASSUMPTION: matrices must be sorted in increasing Z order.
         // Assume also that the matrices are structured as:
-        //     (x, y, z, de, ...)
+        //     (x, y, z, ...)
 
         arma::vec xInterp;
         arma::vec yInterp;
-        arma::vec enInterp;
 
-        arma::interp1(simtrack.col(2), simtrack.col(0), expdata.col(2), xInterp);
-        arma::interp1(simtrack.col(2), simtrack.col(1), expdata.col(2), yInterp);
-        arma::interp1(simtrack.col(2), simtrack.col(3), expdata.col(2), enInterp);
+        arma::interp1(simPos.col(2), simPos.col(0), expPos.col(2), xInterp);
+        arma::interp1(simPos.col(2), simPos.col(1), expPos.col(2), yInterp);
 
-        arma::mat result (xInterp.n_rows, 3);
-        result.col(0) = (xInterp - expdata.col(0)) / 0.5e-2;  // Valid?
-        result.col(1) = (yInterp - expdata.col(1)) / 0.5e-2;
-        result.col(2) = (enInterp - expdata.col(3)) / (0.1 * expdata.col(3).max());
+        arma::mat result (xInterp.n_rows, 2);
+        result.col(0) = (xInterp - expPos.col(0)) / 0.5e-2;  // Valid?
+        result.col(1) = (yInterp - expPos.col(1)) / 0.5e-2;
 
         return result;
     }
 
-    arma::mat MCminimizer::prepareSimulatedTrackMatrix(const arma::mat& simtrack) const
+    arma::vec MCminimizer::findEnergyDeviation(const arma::mat& simPos, const arma::vec& simEn,
+                                               const arma::vec& expMesh) const
     {
-        // Simulation has columns (x, y, z, time, enu, azi, pol).
-        // Need to output (x, y, z, de)
-
-        arma::mat result (simtrack.n_rows, 4, arma::fill::zeros);
-
-        result.cols(0, 2) = simtrack.cols(0, 2);
-        result.col(3).tail(result.n_rows-1) = -arma::diff(simtrack.col(4));
-
-        return result;
+        arma::vec simMesh = evtgen.makeMeshSignal(simPos, simEn);
+        double sigma = expMesh.max() * 0.10;
+        return (simMesh - expMesh) / sigma;
     }
 
-    double MCminimizer::runTrack(const arma::vec& p, const arma::mat& trueValues) const
+    double MCminimizer::runTrack(const arma::vec& params, const arma::mat& expPos, const arma::vec& expMesh) const
     {
-        arma::vec3 thisBfield = {0, 0, p(6)};
+        arma::vec3 thisBfield = {0, 0, params(6)};
 
-        Track tr = tracker.trackParticle(p(0), p(1), p(2), p(3), p(4), p(5), thisBfield);
-        arma::mat simtrack = tr.getMatrix();
+        Track tr = tracker.trackParticle(params(0), params(1), params(2), params(3), params(4), params(5), thisBfield);
+        arma::mat simPos = tr.getPositionMatrix();
+        arma::vec simEn = tr.getEnergyVector();
 
-        double zlenSim = simtrack.col(2).max() - simtrack.col(2).min();
-        double zlenTrue = trueValues.col(2).max() - trueValues.col(2).min();
+        double zlenSim = simPos.col(2).max() - simPos.col(2).min();
+        double zlenExp = expPos.col(2).max() - expPos.col(2).min();
 
+        double posChi2 = 0;
+        double enChi2 = 0;
         double chi2 = 0;
-        if (simtrack.n_rows > 10 and (zlenSim - zlenTrue) >= -0.05) {
-            arma::mat simtrackMat = prepareSimulatedTrackMatrix(simtrack);
-            arma::mat devs = findDeviations(simtrackMat, trueValues);
-            arma::vec validDevs = dropNaNs(arma::sum(arma::square(devs), 1));
-            if (!validDevs.is_empty()) {
-                chi2 = arma::median(validDevs);
-            }
-            else {
-                chi2 = 200;
-            }
+
+        if (simPos.n_rows > 10 and (zlenSim - zlenExp) >= -0.05) {
+            arma::mat posDevs = findPositionDeviations(simPos, expPos);
+            arma::vec validPosDevs = dropNaNs(arma::sum(arma::square(posDevs), 1));
+            posChi2 = !validPosDevs.is_empty() ? arma::median(validPosDevs) : 200;
+
+            arma::vec enDevs = findEnergyDeviation(simPos, simEn, expMesh);
+            arma::vec validEnDevs = dropNaNs(arma::square(enDevs));
+            enChi2 = !validEnDevs.is_empty() ? arma::mean(validEnDevs) : 200;
+
+            chi2 = posChi2 + enChi2;
         }
         else {
             chi2 = 100;
@@ -110,8 +106,8 @@ namespace mcopt
     }
 
     MCminimizeResult MCminimizer::minimize(const arma::vec& ctr0, const arma::vec& sigma0,
-                                           const arma::mat& trueValues, const unsigned numIters, const unsigned numPts,
-                                           const double redFactor) const
+                                           const arma::mat& expPos, const arma::vec& expMesh,
+                                           const unsigned numIters, const unsigned numPts, const double redFactor) const
     {
         arma::uword numVars = ctr0.n_rows;
 
@@ -135,7 +131,7 @@ namespace mcopt
                 arma::vec p = arma::conv_to<arma::colvec>::from(params.row(j));
                 double chi2;
                 try {
-                    chi2 = runTrack(p, trueValues);
+                    chi2 = runTrack(p, expPos, expMesh);
                 }
                 catch (const std::exception&) {
                     chi2 = arma::datum::nan;

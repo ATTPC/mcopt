@@ -17,19 +17,22 @@ namespace mcopt
     class MCminimizer
     {
     public:
-        MCminimizer(const Tracker& tracker)
-            : tracker(tracker) {}
+        MCminimizer(const Tracker& tracker, const EventGenerator& evtgen)
+            : tracker(tracker), evtgen(evtgen) {}
 
         static arma::mat makeParams(const arma::vec& ctr, const arma::vec& sigma, const unsigned numSets,
                                     const arma::vec& mins, const arma::vec& maxes);
-        static arma::mat findDeviations(const arma::mat& simtrack, const arma::mat& expdata);
+        static arma::mat findPositionDeviations(const arma::mat& simPos, const arma::mat& expPos);
+        arma::vec findEnergyDeviation(const arma::mat& simPos, const arma::vec& simEn, const arma::vec& expMesh) const;
         arma::mat prepareSimulatedTrackMatrix(const arma::mat& simtrack) const;
-        double runTrack(const arma::vec& p, const arma::mat& trueValues) const;
-        MCminimizeResult minimize(const arma::vec& ctr0, const arma::vec& sigma0, const arma::mat& trueValues,
-                                  const unsigned numIters, const unsigned numPts, const double redFactor) const;
+        double runTrack(const arma::vec& params, const arma::mat& expPos, const arma::vec& expMesh) const;
+        MCminimizeResult minimize(const arma::vec& ctr0, const arma::vec& sigma0, const arma::mat& expPos,
+                                  const arma::vec& expMesh, const unsigned numIters, const unsigned numPts,
+                                  const double redFactor) const;
 
     private:
         Tracker tracker;
+        EventGenerator evtgen;
     };
 }
 

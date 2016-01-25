@@ -14,9 +14,9 @@ namespace mcopt {
                     const double enu, const double azi, const double pol);
 
         arma::mat getMatrix() const;
+        arma::mat getPositionMatrix() const;
         arma::vec getEnergyVector() const { return arma::vec(enu); }
         size_t numPts() const;
-        void unTiltAndRecenter(const arma::vec beamCtr, const double tilt);
 
     private:
         std::vector<double> x;

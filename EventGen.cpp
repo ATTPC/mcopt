@@ -6,9 +6,14 @@ namespace mcopt
 {
     arma::mat calibrate(const Track& tr, const arma::vec& vd, const double clock)
     {
-        // Assume tr has units of meters, vd in cm/us, clock in Hz.
         arma::mat trMat = tr.getMatrix();
         arma::mat pos = trMat.cols(0, 2);
+        return calibrate(pos, vd, clock);
+    }
+
+    arma::mat calibrate(const arma::mat& pos, const arma::vec& vd, const double clock)
+    {
+        // Assume pos has units of meters, vd in cm/us, clock in Hz.
         arma::mat result = pos + pos.col(2) * -vd.t() / (clock * 1e-4);
         result.col(2) -= pos.col(2);
 
@@ -17,16 +22,36 @@ namespace mcopt
 
     arma::mat uncalibrate(const Track& tr, const arma::vec& vd, const double clock, const int offset)
     {
-        // Assume tr has units of meters, vd in cm/us, clock in Hz.
         arma::mat trMat = tr.getMatrix();
         arma::mat pos = trMat.cols(0, 2);
+        return uncalibrate(pos, vd, clock, offset);
+    }
 
+    arma::mat uncalibrate(const arma::mat& pos, const arma::vec& vd, const double clock, const int offset)
+    {
+        // Assume tr has units of meters, vd in cm/us, clock in Hz.
         arma::vec tbs = pos.col(2) * clock * 1e-4 / (-vd(2)) + offset;
 
         arma::mat result = pos - tbs * -vd.t() / (clock * 1e-4);
         result.col(2) = tbs;
 
         return result;
+    }
+
+    arma::mat unTiltAndRecenter(const arma::mat& pos, const arma::vec& beamCtr, const double tilt)
+    {
+        arma::mat res (arma::size(pos));
+        res.col(0) = pos.col(0) + beamCtr(0);
+        res.col(1) = pos.col(1) + beamCtr(1);
+        res.col(2) = pos.col(2);
+
+        arma::mat tmat {{1, 0, 0},
+                        {0, cos(-tilt), -sin(-tilt)},
+                        {0, sin(-tilt), cos(-tilt)}};
+
+        res = (tmat * res.t()).t();
+        res.col(2) += beamCtr(2);
+        return res;
     }
 
     arma::vec squareWave(const arma::uword size, const arma::uword leftEdge,
@@ -47,17 +72,24 @@ namespace mcopt
 
         for (arma::uword i = offset; i < res.n_rows; i++) {
             double t = (i - offset) / s;
-            res(i) = amplitude * std::exp(-3*t) * std::sin(t) * std::pow(t, 3);
+            res(i) = amplitude * std::exp(-3*t) * std::sin(t) * std::pow(t, 3) / 0.044;
         }
         return res;
     }
 
     std::map<pad_t, arma::vec> EventGenerator::makeEvent(const Track& tr) const
     {
-        arma::mat uncal = uncalibrate(tr, vd, clock);
-        arma::vec en = tr.getEnergyVector() * 1e6 * massNum;
-        assert(en.n_rows == uncal.n_rows);
-        arma::uvec ne = arma::conv_to<arma::uvec>::from(arma::floor(-arma::diff(en) / ioniz)) * gain;
+        arma::mat trMat = tr.getMatrix();
+        arma::mat pos = trMat.cols(0, 2);
+        arma::vec en = trMat.col(4);
+        return makeEvent(pos, en);
+    }
+
+    std::map<pad_t, arma::vec> EventGenerator::makeEvent(const arma::mat& pos, const arma::vec& en) const
+    {
+        arma::mat posTilted = unTiltAndRecenter(pos, beamCtr, tilt);
+        arma::mat uncal = uncalibrate(posTilted, vd, clock);
+        arma::uvec ne = arma::conv_to<arma::uvec>::from(arma::floor(-arma::diff(en * 1e6 * massNum) / ioniz));
         arma::Col<unsigned> tbs = arma::conv_to<arma::Col<unsigned>>::from(arma::floor(uncal.col(2)));
 
         std::map<pad_t, arma::vec> result;
@@ -97,7 +129,14 @@ namespace mcopt
 
     arma::vec EventGenerator::makeMeshSignal(const Track& tr) const
     {
-        std::map<pad_t, arma::vec> evt = makeEvent(tr);
+        const arma::mat pos = tr.getPositionMatrix();
+        const arma::vec en = tr.getEnergyVector();
+        return makeMeshSignal(pos, en);
+    }
+
+    arma::vec EventGenerator::makeMeshSignal(const arma::mat& pos, const arma::vec& en) const
+    {
+        std::map<pad_t, arma::vec> evt = makeEvent(pos, en);
         arma::vec res (512, arma::fill::zeros);
 
         for (const auto& pair : evt) {
