@@ -127,6 +127,35 @@ namespace mcopt
         return res;
     }
 
+    arma::mat EventGenerator::makePeaksTableFromSimulation(const Track& tr) const
+    {
+        arma::mat pos = tr.getPositionMatrix();
+        arma::vec en = tr.getEnergyVector();
+        return makePeaksTableFromSimulation(pos, en);
+    }
+
+    arma::mat EventGenerator::makePeaksTableFromSimulation(const arma::mat& pos, const arma::vec& en) const
+    {
+        std::map<pad_t, arma::vec> evt = makeEvent(pos, en);
+
+        std::vector<arma::rowvec> rows;
+        for (const auto& pair : evt) {
+            const auto& padNum = pair.first;
+            arma::uword maxTB;
+            double maxVal = pair.second.max(maxTB);  // This stores the location of the max in its argument
+            auto xy = pads.getPadCenter(padNum);
+            rows.push_back(arma::rowvec{xy.at(0), xy.at(1), static_cast<double>(maxTB), maxVal,
+                                        static_cast<double>(padNum)});
+        }
+
+        arma::mat result (rows.size(), 5);
+        for (size_t i = 0; i < rows.size(); i++) {
+            result.row(i) = rows.at(i);
+        }
+
+        return result;
+    }
+
     arma::vec EventGenerator::makeMeshSignal(const Track& tr) const
     {
         const arma::mat pos = tr.getPositionMatrix();
