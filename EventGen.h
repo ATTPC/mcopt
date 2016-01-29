@@ -18,6 +18,11 @@ namespace mcopt
     arma::mat calibrate(const arma::mat& pos, const arma::vec& vd, const double clock);
     arma::mat uncalibrate(const Track& tr, const arma::vec& vd, const double clock, const int offset=0);
     arma::mat uncalibrate(const arma::mat& pos, const arma::vec& vd, const double clock, const int offset=0);
+    arma::mat calibrateWithTilt(const Track& tr, const arma::vec& vd, const double clock, const double tilt);
+    arma::mat calibrateWithTilt(const arma::mat& pos, const arma::vec& vd, const double clock, const double tilt);
+    arma::mat uncalibrateWithTilt(const Track& tr, const arma::vec& vd, const double clock, const int offset=0);
+    arma::mat uncalibrateWithTilt(const arma::mat& pos, const arma::vec& vd, const double clock, const double tilt, const int offset=0);
+
     arma::mat unTiltAndRecenter(const arma::mat& pos, const arma::vec& beamCtr, const double tilt);
 
     arma::vec squareWave(const arma::uword size, const arma::uword leftEdge,
@@ -28,6 +33,18 @@ namespace mcopt
     {
         unsigned timeBucket;
         unsigned long amplitude;
+    };
+
+    class TBOverflow : public std::exception
+    {
+    public:
+        TBOverflow(const std::string& m) : msg("TB Overflow: " + m) {}
+        TBOverflow() : msg("TB Overflow") {}
+
+        const char* what() const noexcept { return msg.c_str(); }
+
+    private:
+        std::string msg;
     };
 
     class EventGenerator

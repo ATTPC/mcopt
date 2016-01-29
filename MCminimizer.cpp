@@ -78,7 +78,8 @@ namespace mcopt
             arma::vec validEnDevs = dropNaNs(arma::square(enDevs));
             enChi2 = !validEnDevs.is_empty() ? arma::mean(validEnDevs) : 200;
 
-            chi2 = posChi2 + enChi2;
+            // chi2 = posChi2 + enChi2;
+            chi2 = posChi2;
         }
         else {
             chi2 = 100;
