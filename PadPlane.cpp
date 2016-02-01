@@ -13,8 +13,10 @@ namespace mcopt {
 
     uint16_t PadPlane::getPadNumberFromCoordinates(const double x, const double y) const
     {
-        double rotX = cos(-rotAngle) * x - sin(-rotAngle) * y;
-        double rotY = sin(-rotAngle) * x + cos(-rotAngle) * y;
+        const double cosAng = cos(-rotAngle);
+        const double sinAng = sin(-rotAngle);
+        double rotX = cosAng * x - sinAng * y;
+        double rotY = sinAng * x + cosAng * y;
 
         double xPos = std::round((rotX - xLowerBound) / xDelta);
         double yPos = std::round((rotY - yLowerBound) / yDelta);
