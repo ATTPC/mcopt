@@ -124,8 +124,8 @@ namespace mcopt
     std::map<pad_t, arma::vec> EventGenerator::makeEvent(const arma::mat& pos, const arma::vec& en) const
     {
         arma::mat posTilted = unTiltAndRecenter(pos, beamCtr, tilt);
-        arma::mat uncal = uncalibrateWithTilt(posTilted, vd, clock, tilt);
-        // arma::mat uncal = uncalibrate(posTilted, vd, clock);
+        // arma::mat uncal = uncalibrateWithTilt(posTilted, vd, clock, tilt);
+        arma::mat uncal = uncalibrate(posTilted, vd, clock);
         arma::uvec ne = arma::conv_to<arma::uvec>::from(arma::floor(-arma::diff(en * 1e6 * massNum) / ioniz));
         arma::Col<unsigned> tbs = arma::conv_to<arma::Col<unsigned>>::from(arma::floor(uncal.col(2)));
 
