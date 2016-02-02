@@ -12,7 +12,15 @@ namespace mcopt
 {
     arma::vec dropNaNs(const arma::vec& data);
 
-    typedef std::tuple<arma::vec, arma::mat, arma::vec, arma::vec> MCminimizeResult;
+    class MCminimizeResult
+    {
+    public:
+        arma::vec ctr;
+        arma::mat allParams;
+        arma::vec minPosChis;
+        arma::vec minEnChis;
+        arma::vec goodParamIdx;
+    };
 
     class MCminimizer
     {
@@ -25,7 +33,7 @@ namespace mcopt
         static arma::mat findPositionDeviations(const arma::mat& simPos, const arma::mat& expPos);
         arma::vec findEnergyDeviation(const arma::mat& simPos, const arma::vec& simEn, const arma::vec& expMesh) const;
         arma::mat prepareSimulatedTrackMatrix(const arma::mat& simtrack) const;
-        double runTrack(const arma::vec& params, const arma::mat& expPos, const arma::vec& expMesh) const;
+        std::tuple<double, double> runTrack(const arma::vec& params, const arma::mat& expPos, const arma::vec& expMesh) const;
         MCminimizeResult minimize(const arma::vec& ctr0, const arma::vec& sigma0, const arma::mat& expPos,
                                   const arma::vec& expMesh, const unsigned numIters, const unsigned numPts,
                                   const double redFactor) const;

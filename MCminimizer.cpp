@@ -54,7 +54,8 @@ namespace mcopt
         return (simMesh - expMesh) / sigma;
     }
 
-    double MCminimizer::runTrack(const arma::vec& params, const arma::mat& expPos, const arma::vec& expMesh) const
+    std::tuple<double, double> MCminimizer::runTrack(const arma::vec& params, const arma::mat& expPos,
+                                                     const arma::vec& expMesh) const
     {
         arma::vec3 thisBfield = {0, 0, params(6)};
 
@@ -67,7 +68,6 @@ namespace mcopt
 
         double posChi2 = 0;
         double enChi2 = 0;
-        double chi2 = 0;
 
         if (simPos.n_rows > 10 and (zlenSim - zlenExp) >= -0.05) {
             arma::mat posDevs = findPositionDeviations(simPos, expPos);
@@ -77,15 +77,13 @@ namespace mcopt
             arma::vec enDevs = findEnergyDeviation(simPos, simEn, expMesh);
             arma::vec validEnDevs = dropNaNs(arma::square(enDevs));
             enChi2 = !validEnDevs.is_empty() ? arma::mean(validEnDevs) : 200;
-
-            chi2 = posChi2 + enChi2;
-            chi2 = posChi2;
         }
         else {
-            chi2 = 100;
+            posChi2 = 300;
+            enChi2 = 300;
         }
 
-        return chi2;
+        return {posChi2, enChi2};
     }
 
     arma::mat MCminimizer::makeParams(const arma::vec& ctr, const arma::vec& sigma, const unsigned numSets,
@@ -119,37 +117,53 @@ namespace mcopt
         arma::vec maxes = ctr0 + sigma0 / 2;
         arma::vec ctr = ctr0;
         arma::vec sigma = sigma0;
+
         arma::mat allParams(numPts * numIters, numVars);
-        arma::vec minChis(numIters);
+        arma::vec minPosChis(numIters);
+        arma::vec minEnChis(numIters);
         arma::vec goodParamIdx(numIters);
 
         for (unsigned i = 0; i < numIters; i++) {
             arma::mat params = makeParams(ctr, sigma, numPts, mins, maxes);
-            arma::vec chi2s (numPts, arma::fill::zeros);
+            arma::vec posChi2s (numPts, arma::fill::zeros);
+            arma::vec enChi2s (numPts, arma::fill::zeros);
 
             #pragma omp parallel for schedule(static)
             for (unsigned j = 0; j < numPts; j++) {
                 arma::vec p = arma::conv_to<arma::colvec>::from(params.row(j));
-                double chi2;
+                double posChi2, enChi2;
                 try {
-                    chi2 = runTrack(p, expPos, expMesh);
+                    std::tie(posChi2, enChi2) = runTrack(p, expPos, expMesh);
                 }
                 catch (const std::exception&) {
-                    chi2 = arma::datum::nan;
+                    posChi2 = arma::datum::nan;
+                    enChi2 = arma::datum::nan;
                 }
-                chi2s(j) = chi2;
+                posChi2s(j) = posChi2;
+                enChi2s(j) = enChi2;
             }
 
+            arma::vec totChis = posChi2s + enChi2s;
+
             arma::uword minChiLoc = 0;
-            double minChi = chi2s.min(minChiLoc);
+            totChis.min(minChiLoc);
 
             ctr = arma::conv_to<arma::colvec>::from(params.row(minChiLoc));
             sigma *= redFactor;
 
             allParams.rows(i*numPts, (i+1)*numPts-1) = params;
-            minChis(i) = minChi;
+            minPosChis(i) = posChi2s(minChiLoc);
+            minEnChis(i) = enChi2s(minChiLoc);
             goodParamIdx(i) = minChiLoc + i*numPts;
         }
-        return std::make_tuple(ctr, allParams, minChis, goodParamIdx);
+
+        MCminimizeResult res;
+        res.ctr = std::move(ctr);
+        res.allParams = std::move(allParams);
+        res.minPosChis = std::move(minPosChis);
+        res.minEnChis = std::move(minEnChis);
+        res.goodParamIdx = std::move(goodParamIdx);
+
+        return res;
     }
 }
