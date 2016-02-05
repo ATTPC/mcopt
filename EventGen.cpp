@@ -230,20 +230,33 @@ namespace mcopt
         this->multWindow = std::lround(multWindow / masterCk * writeCk);
     }
 
-    arma::mat Trigger::findTriggerSignals(const std::map<pad_t, Peak>& peaks) const
+    arma::mat Trigger::findTriggerSignals(const std::map<pad_t, arma::vec>& event) const
     {
-        arma::mat res (10, 512, arma::fill::zeros);
-        for (const auto& pair : peaks) {
-            const auto& pad = pair.first;
-            const auto& peak = pair.second;
+        arma::mat res (numCobos, numTBs, arma::fill::zeros);
+        for (const auto& pair : event) {
+            const auto& padNum = pair.first;
+            const auto& padSig = pair.second;
 
-            if (peak.amplitude < padThresh) continue;
+            arma::vec sig = arma::vec (numTBs, arma::fill::zeros);
 
-            auto cobo = padmap.reverseFind(pad).cobo;
-            assert(cobo != padmap.missingValue);
+            for (arma::uword tb = 0; tb < numTBs; ) {
+                if (padSig(tb) > padThresh) {
+                    for (arma::uword sqIdx = tb; sqIdx < std::min(tb + trigWidth, numTBs); sqIdx++) {
+                        sig(sqIdx) += trigHeight;
+                    }
+                    tb += trigWidth;
+                }
+                else {
+                    tb += 1;
+                }
+            }
 
-            arma::vec sig = squareWave(512, peak.timeBucket, trigWidth, trigHeight);
-            res.row(cobo) += sig.t();
+            if (arma::any(sig)) {
+                auto cobo = padmap.reverseFind(padNum).cobo;
+                assert(cobo != padmap.missingValue);
+
+                res.row(cobo) += sig.t();
+            }
         }
         return res;
     }
@@ -254,14 +267,14 @@ namespace mcopt
         for (unsigned long j = 0; j < trigs.n_cols; j++) {
             unsigned long min = j < multWindow ? 0 : j - multWindow;
             unsigned long max = j;
-            res.col(j) = arma::sum(trigs.cols(min, max), 1);
+            res.col(j) = arma::sum(trigs.cols(min, max), 1) * readCk / writeCk;  // Mult is read on readCk, so rescale this signal
         }
         return res;
     }
 
-    bool Trigger::didTrigger(const std::map<pad_t, Peak>& peaks) const
+    bool Trigger::didTrigger(const std::map<pad_t, arma::vec>& event) const
     {
-        arma::mat sigs = applyMultiplicityWindow(findTriggerSignals(peaks));
+        arma::mat sigs = applyMultiplicityWindow(findTriggerSignals(event));
         arma::vec maxes = arma::max(sigs, 1);
         return arma::any(maxes > multThresh);
     }

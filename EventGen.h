@@ -6,7 +6,6 @@
 #include <map>
 #include <vector>
 #include <cassert>
-#include <cmath>
 #include <algorithm>
 #include "Track.h"
 #include "PadPlane.h"
@@ -84,11 +83,12 @@ namespace mcopt
                 const unsigned long multThresh, const unsigned long multWindow, const double writeCk,
                 const double gain, const double discrFrac, const PadMap& padmap);
 
-        arma::mat findTriggerSignals(const std::map<pad_t, Peak>& peaks) const;
+        arma::mat findTriggerSignals(const std::map<pad_t, arma::vec>& peaks) const;
         arma::mat applyMultiplicityWindow(const arma::mat& trigs) const;
-        bool didTrigger(const std::map<pad_t, Peak>& peaks) const;
+        bool didTrigger(const std::map<pad_t, arma::vec>& peaks) const;
 
         double getPadThresh() const { return padThresh; }
+        unsigned long getTrigWidth() const { return trigWidth; }
         unsigned long getMultWindow() const { return multWindow; }
 
     private:
@@ -98,8 +98,11 @@ namespace mcopt
         unsigned long multThresh;
         unsigned long multWindow;
         double writeCk;
+        double readCk = 25e6;
         double masterCk = 100e6;
         const PadMap padmap;
+        const arma::uword numCobos = 10;
+        const arma::uword numTBs = 512;
     };
 }
 

@@ -103,7 +103,7 @@ TEST_CASE("Trigger class works", "[trigger]")
     {
         double threshSetting = (padThreshMSB << 4) + padThreshLSB;
         CAPTURE(threshSetting);
-        double fullScale = gain / 4096 / 1.602176565e-19;;
+        double fullScale = gain / 4096 / 1.602176565e-19;
         CAPTURE(fullScale);
         double expectedThresh = (threshSetting / 128) * discrFrac * 4096 * fullScale;
         CAPTURE(trig.getPadThresh());
@@ -122,18 +122,25 @@ TEST_CASE("Trigger class works", "[trigger]")
 
     SECTION("Trigger signals are valid")
     {
-        std::map<mcopt::pad_t, mcopt::Peak> peaks;
-        peaks.emplace(0, mcopt::Peak{10, 1});
-        peaks.emplace(1, mcopt::Peak{10, 20000});
+        std::map<mcopt::pad_t, arma::vec> event;
+
+        arma::vec goodSignal (512, arma::fill::zeros);
+        goodSignal(10) = 30000;
+        event.emplace(1, goodSignal);
+
+        arma::vec badSignal (512, arma::fill::zeros);
+        badSignal(10) = 1;
+        event.emplace(0, badSignal);
 
         CAPTURE(trig.getPadThresh());
 
-        arma::mat res = trig.findTriggerSignals(peaks);
+        arma::mat res = trig.findTriggerSignals(event);
 
         SECTION("Signals below pad threshold do not trigger")
         {
             const arma::rowvec& v = res.row(0);
             CAPTURE(arma::nonzeros(v));
+            CAPTURE(arma::nonzeros(badSignal));
             REQUIRE(arma::accu(v) < 1e-6);
         }
 
@@ -141,7 +148,17 @@ TEST_CASE("Trigger class works", "[trigger]")
         {
             const arma::rowvec& v = res.row(1);
             CAPTURE(arma::nonzeros(v));
+            CAPTURE(arma::nonzeros(goodSignal));
             REQUIRE(arma::accu(v) > 0);
+        }
+
+        SECTION("trigWidth parameter is correct")
+        {
+            unsigned long measured = trig.getTrigWidth();
+            unsigned long expected = static_cast<unsigned long>(std::lround(trigWidth * writeCk));
+            CAPTURE(trigWidth);
+            CAPTURE(writeCk);
+            REQUIRE(measured == expected);
         }
 
         SECTION("Trigger pulse shape is right")
@@ -186,20 +203,23 @@ TEST_CASE("Trigger class works", "[trigger]")
         mcopt::Trigger trig (padThreshMSB, padThreshLSB, trigWidth, multThresh, multWindow,
                              writeCk, gain, discrFrac, padmap);
 
-        std::map<mcopt::pad_t, mcopt::Peak> peaks;
+        std::map<mcopt::pad_t, arma::vec> event;
+        arma::vec constSignal (512);
+        constSignal.fill(20000);
+
         for (unsigned i = 0; i < 512; i++) {
-            peaks.emplace(i, mcopt::Peak{10, 20000});
+            event.emplace(i, constSignal);
         }
 
-        REQUIRE(trig.didTrigger(peaks));
+        REQUIRE(trig.didTrigger(event));
     }
 
     SECTION("didTrigger function does not trigger when below threshold")
     {
-        std::map<mcopt::pad_t, mcopt::Peak> peaks;
-        peaks.emplace(0, mcopt::Peak{10, 20000});
+        std::map<mcopt::pad_t, arma::vec> event;
+        event.emplace(0, arma::ones<arma::vec>(512));
 
-        REQUIRE_FALSE(trig.didTrigger(peaks));
+        REQUIRE_FALSE(trig.didTrigger(event));
     }
 }
 
