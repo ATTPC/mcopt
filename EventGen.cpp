@@ -19,23 +19,6 @@ namespace mcopt
         return result;
     }
 
-    arma::mat calibrateWithTilt(const Track& tr, const arma::vec& vd, const double clock, const double tilt)
-    {
-        arma::mat pos = tr.getPositionMatrix();
-        return calibrateWithTilt(pos, vd, clock, tilt);
-    }
-
-    arma::mat calibrateWithTilt(const arma::mat& pos, const arma::vec& vd, const double clock, const double tilt)
-    {
-        // Assume pos has units of meters, vd in cm/us, clock in Hz.
-        arma::mat result (arma::size(pos));
-        result.col(0) = pos.col(0)             + pos.col(2) * -vd(0) / (clock * 1e-4);
-        result.col(1) = pos.col(1)             + pos.col(2) * -vd(1) / (clock * 1e-4);
-        result.col(2) = pos.col(1) * sin(tilt) + pos.col(2) * -vd(2) / (clock * 1e-4);
-
-        return result;
-    }
-
     arma::mat uncalibrate(const Track& tr, const arma::vec& vd, const double clock, const int offset)
     {
         arma::mat pos = tr.getPositionMatrix();
@@ -48,27 +31,6 @@ namespace mcopt
         arma::vec tbs = pos.col(2) * clock * 1e-4 / (-vd(2)) + offset;
 
         arma::mat result = pos - tbs * -vd.t() / (clock * 1e-4);
-        result.col(2) = tbs;
-
-        return result;
-    }
-
-    arma::mat uncalibrateWithTilt(const Track& tr, const arma::vec& vd, const double clock, const double tilt, const int offset)
-    {
-        arma::mat pos = tr.getPositionMatrix();
-        return uncalibrateWithTilt(pos, vd, clock, tilt, offset);
-    }
-
-    arma::mat uncalibrateWithTilt(const arma::mat& pos, const arma::vec& vd, const double clock, const double tilt, const int offset)
-    {
-        // Assume tr has units of meters, vd in cm/us, clock in Hz.
-
-        double sint = sin(tilt);
-        arma::vec v = -vd;  // I think this is because of the left-handed system?
-
-        arma::vec tbs = (pos.col(2) - sint * pos.col(1)) / (v(2) - v(1) * sint) * clock * 1e-4 + offset;
-
-        arma::mat result = pos - tbs * v.t() / (clock * 1e-4);
         result.col(2) = tbs;
 
         return result;
@@ -124,7 +86,6 @@ namespace mcopt
     std::map<pad_t, arma::vec> EventGenerator::makeEvent(const arma::mat& pos, const arma::vec& en) const
     {
         arma::mat posTilted = unTiltAndRecenter(pos, beamCtr, tilt);
-        // arma::mat uncal = uncalibrateWithTilt(posTilted, vd, clock, tilt);
         arma::mat uncal = uncalibrate(posTilted, vd, clock);
         arma::uvec ne = arma::conv_to<arma::uvec>::from(arma::floor(-arma::diff(en * 1e6 * massNum) / ioniz));
         arma::Col<unsigned> tbs = arma::conv_to<arma::Col<unsigned>>::from(arma::floor(uncal.col(2)));

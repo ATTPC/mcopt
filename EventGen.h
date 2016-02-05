@@ -17,10 +17,6 @@ namespace mcopt
     arma::mat calibrate(const arma::mat& pos, const arma::vec& vd, const double clock);
     arma::mat uncalibrate(const Track& tr, const arma::vec& vd, const double clock, const int offset=0);
     arma::mat uncalibrate(const arma::mat& pos, const arma::vec& vd, const double clock, const int offset=0);
-    arma::mat calibrateWithTilt(const Track& tr, const arma::vec& vd, const double clock, const double tilt);
-    arma::mat calibrateWithTilt(const arma::mat& pos, const arma::vec& vd, const double clock, const double tilt);
-    arma::mat uncalibrateWithTilt(const Track& tr, const arma::vec& vd, const double clock, const int offset=0);
-    arma::mat uncalibrateWithTilt(const arma::mat& pos, const arma::vec& vd, const double clock, const double tilt, const int offset=0);
 
     arma::mat unTiltAndRecenter(const arma::mat& pos, const arma::vec& beamCtr, const double tilt);
 
