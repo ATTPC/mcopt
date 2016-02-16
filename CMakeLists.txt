@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.1)
 project(mcopt VERSION 2.1.0)
 
+
 # Set up RPATH for build products
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 #set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
@@ -43,5 +44,41 @@ set(TEST_MCOPT_SRC test/catch_main.cpp test/test_mcopt.cpp test/test_EventGen.cp
 add_executable(test_mcopt ${TEST_MCOPT_SRC})
 target_link_libraries(test_mcopt ${ARMADILLO_LIBRARIES} mcopt)
 
-install(TARGETS mcopt
+install(TARGETS mcopt EXPORT mcoptTargets
         LIBRARY DESTINATION lib)
+
+install(DIRECTORY include/ DESTINATION include/mcopt FILES_MATCHING PATTERN "*.h")
+
+include(CMakePackageConfigHelpers)
+
+write_basic_package_version_file(
+  "${CMAKE_CURRENT_BINARY_DIR}/mcoptConfigVersion.cmake"
+  VERSION ${mcopt_VERSION}
+  COMPATIBILITY AnyNewerVersion
+)
+
+export(EXPORT mcoptTargets
+  FILE "${CMAKE_CURRENT_BINARY_DIR}/mcoptTargets.cmake"
+  NAMESPACE mcopt::
+)
+configure_file(cmake/mcoptConfig.cmake
+  "${CMAKE_CURRENT_BINARY_DIR}/mcoptConfig.cmake"
+  COPYONLY
+)
+
+set(ConfigPackageLocation lib/cmake/mcopt)
+install(EXPORT mcoptTargets
+  FILE
+    mcoptTargets.cmake
+  NAMESPACE
+    mcopt::
+  DESTINATION
+    ${ConfigPackageLocation}
+)
+install(
+  FILES
+    cmake/mcoptConfig.cmake
+    "${CMAKE_CURRENT_BINARY_DIR}/mcoptConfigVersion.cmake"
+  DESTINATION
+    ${ConfigPackageLocation}
+)
