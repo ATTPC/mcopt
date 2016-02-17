@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.1)
-project(mcopt VERSION 2.1.0)
+project(mcopt VERSION 2.1.1)
 
 
 # Set up RPATH for build products
