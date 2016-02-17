@@ -52,7 +52,7 @@ int main(const int argc, const char** argv)
 
     std::vector<std::chrono::high_resolution_clock::duration> durations;
 
-    size_t numIters = 100;
+    size_t numIters = 5000;
 
     for (size_t i = 0; i < numIters; i++) {
         auto begin = std::chrono::high_resolution_clock::now();
