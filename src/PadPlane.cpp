@@ -5,7 +5,7 @@ namespace mcopt {
     PadPlane::PadPlane(const arma::Mat<uint16_t>& lt, const double xLB, const double xDelta,
                        const double yLB, const double yDelta, const double rotAngle)
     : xLowerBound(xLB), yLowerBound(yLB), xDelta(xDelta), yDelta(yDelta), lookupTable(lt), rotAngle(rotAngle),
-      padCoords(generatePadCoordinates(rotAngle))
+      sinRotAngle(sin(rotAngle)), cosRotAngle(cos(rotAngle)), padCoords(generatePadCoordinates(rotAngle))
     {
         xUpperBound = xLowerBound + lookupTable.n_cols * xDelta;
         yUpperBound = yLowerBound + lookupTable.n_rows * yDelta;
@@ -13,8 +13,8 @@ namespace mcopt {
 
     uint16_t PadPlane::getPadNumberFromCoordinates(const double x, const double y) const
     {
-        const double cosAng = cos(-rotAngle);
-        const double sinAng = sin(-rotAngle);
+        const double cosAng =  cosRotAngle;  // cos(-rotAngle)
+        const double sinAng = -sinRotAngle;  // sin(-rotAngle)
         double rotX = cosAng * x - sinAng * y;
         double rotY = sinAng * x + cosAng * y;
 

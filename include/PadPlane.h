@@ -25,6 +25,8 @@ namespace mcopt {
         double yUpperBound;
         const arma::Mat<uint16_t> lookupTable;
         double rotAngle;
+        double sinRotAngle;
+        double cosRotAngle;
         const std::vector<std::vector<std::vector<double>>> padCoords;
     };
 
