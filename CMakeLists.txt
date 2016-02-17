@@ -58,10 +58,13 @@ find_package(HDF5 COMPONENTS CXX)
 if(HDF5_FOUND)
     include_directories(SYSTEM ${HDF5_INCLUDE_DIRS})
 
-    add_executable(prof_tracker EXCLUDE_FROM_ALL prof/prof_tracker.cpp)
+    add_executable(prof_tracker EXCLUDE_FROM_ALL prof/prof_tracker.cpp prof/utils.cpp)
     target_link_libraries(prof_tracker ${ARMADILLO_LIBRARIES} mcopt ${HDF5_CXX_LIBRARIES})
 
-    add_custom_target(prof DEPENDS prof_tracker)
+    add_executable(prof_evtgen EXCLUDE_FROM_ALL prof/prof_evtgen.cpp prof/utils.cpp)
+    target_link_libraries(prof_evtgen ${ARMADILLO_LIBRARIES} mcopt ${HDF5_CXX_LIBRARIES})
+
+    add_custom_target(prof DEPENDS prof_tracker prof_evtgen)
 endif()
 
 include(CMakePackageConfigHelpers)
