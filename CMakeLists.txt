@@ -54,6 +54,16 @@ install(TARGETS mcopt EXPORT mcoptTargets
 
 install(DIRECTORY include/ DESTINATION include/mcopt FILES_MATCHING PATTERN "*.h")
 
+find_package(HDF5 COMPONENTS CXX)
+if(HDF5_FOUND)
+    include_directories(SYSTEM ${HDF5_INCLUDE_DIRS})
+
+    add_executable(prof_tracker EXCLUDE_FROM_ALL prof/prof_tracker.cpp)
+    target_link_libraries(prof_tracker ${ARMADILLO_LIBRARIES} mcopt ${HDF5_CXX_LIBRARIES})
+
+    add_custom_target(prof DEPENDS prof_tracker)
+endif()
+
 include(CMakePackageConfigHelpers)
 
 write_basic_package_version_file(
