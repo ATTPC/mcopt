@@ -105,7 +105,7 @@ namespace mcopt
                 if (offset > 511) continue;
 
                 // Use a precalculated pulse shape that just needs to be scaled and shifted. This is much faster.
-                arma::vec pulse (512, arma::fill::zeros);
+                arma::vec::fixed<512> pulse (arma::fill::zeros);
                 pulse(arma::span(offset, 511)) = gain * ne(i) * pulseTemplate(arma::span(0, 511-offset));
                 padSignal += pulse;
             }
