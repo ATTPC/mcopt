@@ -61,7 +61,7 @@ namespace mcopt
 
         Track tr = tracker.trackParticle(params(0), params(1), params(2), params(3), params(4), params(5), thisBfield);
         arma::mat simPos = tr.getPositionMatrix();
-        arma::vec simEn = tr.getEnergyVector();
+        // arma::vec simEn = tr.getEnergyVector();
 
         double zlenSim = simPos.col(2).max() - simPos.col(2).min();
         double zlenExp = expPos.col(2).max() - expPos.col(2).min();
@@ -74,13 +74,13 @@ namespace mcopt
             arma::vec validPosDevs = dropNaNs(arma::sum(arma::square(posDevs), 1));
             posChi2 = !validPosDevs.is_empty() ? arma::median(validPosDevs) : 200;
 
-            arma::vec enDevs = findEnergyDeviation(simPos, simEn, expMesh);
-            arma::vec validEnDevs = dropNaNs(arma::square(enDevs));
-            enChi2 = !validEnDevs.is_empty() ? arma::mean(validEnDevs) : 200;
+            // arma::vec enDevs = findEnergyDeviation(simPos, simEn, expMesh);
+            // arma::vec validEnDevs = dropNaNs(arma::square(enDevs));
+            // enChi2 = !validEnDevs.is_empty() ? arma::mean(validEnDevs) : 200;
         }
         else {
             posChi2 = 300;
-            enChi2 = 300;
+            // enChi2 = 300;
         }
 
         return {posChi2, enChi2};
@@ -143,7 +143,7 @@ namespace mcopt
                 enChi2s(j) = enChi2;
             }
 
-            arma::vec totChis = posChi2s + enChi2s;
+            arma::vec totChis = posChi2s; //+ enChi2s;
 
             arma::uword minChiLoc = 0;
             totChis.min(minChiLoc);
