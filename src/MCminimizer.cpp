@@ -135,7 +135,7 @@ namespace mcopt
                 try {
                     std::tie(posChi2, enChi2) = runTrack(p, expPos, expMesh);
                 }
-                catch (const std::exception&) {
+                catch (...) {
                     posChi2 = arma::datum::nan;
                     enChi2 = arma::datum::nan;
                 }
