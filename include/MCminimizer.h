@@ -4,6 +4,7 @@
 #include <armadillo>
 #include <vector>
 #include <tuple>
+#include <algorithm>
 #include "Tracker.h"
 #include "Track.h"
 #include "EventGen.h"
@@ -11,6 +12,7 @@
 namespace mcopt
 {
     arma::vec dropNaNs(const arma::vec& data);
+    arma::vec replaceNaNs(const arma::vec& data, const double replacementValue);
 
     class MCminimizeResult
     {

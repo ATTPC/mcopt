@@ -7,7 +7,7 @@ namespace mcopt
         if (!data.has_nan()) {
             return data;
         }
-        arma::vec res (data.n_rows, data.n_cols);
+        arma::vec res (arma::size(data));
         arma::uword dataIter = 0;
         arma::uword resIter = 0;
 
@@ -27,21 +27,52 @@ namespace mcopt
         }
     }
 
+    arma::vec replaceNaNs(const arma::vec& data, const double replacementValue)
+    {
+        if (!data.has_nan()) {
+            return data;
+        }
+
+        arma::vec res (arma::size(data));
+
+        for (arma::uword i = 0; i < data.n_elem; i++) {
+            double v = data(i);
+            res(i) = std::isnan(v) ? replacementValue : v;
+        }
+
+        return res;
+    }
+
     arma::mat MCminimizer::findPositionDeviations(const arma::mat& simPos, const arma::mat& expPos)
     {
         // ASSUMPTION: matrices must be sorted in increasing Z order.
         // Assume also that the matrices are structured as:
         //     (x, y, z, ...)
 
-        arma::vec xInterp;
-        arma::vec yInterp;
+        double minZ = std::min(simPos.col(2).min(), expPos.col(2).min());
+        double maxZ = std::max(simPos.col(2).max(), expPos.col(2).max());
+        arma::uword numBins = static_cast<arma::uword>(std::floor((maxZ - minZ)*1000));  // 1 mm bins in z
 
-        arma::interp1(simPos.col(2), simPos.col(0), expPos.col(2), xInterp);
-        arma::interp1(simPos.col(2), simPos.col(1), expPos.col(2), yInterp);
+        arma::vec interpBins (numBins);
+        for (arma::uword i = 0; i < interpBins.n_elem; i++) {
+            interpBins(i) = minZ + (i / 1000.0);
+        }
 
-        arma::mat result (xInterp.n_rows, 2);
-        result.col(0) = (xInterp - expPos.col(0)) / 0.5e-2;  // Valid?
-        result.col(1) = (yInterp - expPos.col(1)) / 0.5e-2;
+        assert(std::abs(interpBins.max() + 0.001 - maxZ) < 1e-3);
+
+        arma::vec simInterpX;
+        arma::vec simInterpY;
+        arma::vec expInterpX;
+        arma::vec expInterpY;
+
+        arma::interp1(simPos.col(2), simPos.col(0), interpBins, simInterpX);
+        arma::interp1(simPos.col(2), simPos.col(1), interpBins, simInterpY);
+        arma::interp1(expPos.col(2), expPos.col(0), interpBins, expInterpX);
+        arma::interp1(expPos.col(2), expPos.col(1), interpBins, expInterpY);
+
+        arma::mat result (simInterpX.n_rows, 2);
+        result.col(0) = (simInterpX - expInterpX) / 0.5e-2;  // Valid?
+        result.col(1) = (simInterpY - expInterpY) / 0.5e-2;
 
         return result;
     }
@@ -61,29 +92,26 @@ namespace mcopt
 
         Track tr = tracker.trackParticle(params(0), params(1), params(2), params(3), params(4), params(5), thisBfield);
         arma::mat simPos = tr.getPositionMatrix();
-        // arma::vec simEn = tr.getEnergyVector();
-
-        double zlenSim = simPos.col(2).max() - simPos.col(2).min();
-        double zlenExp = expPos.col(2).max() - expPos.col(2).min();
+        arma::vec simEn = tr.getEnergyVector();
 
         double posChi2 = 0;
         double enChi2 = 0;
 
-        if (simPos.n_rows > 10 and (zlenSim - zlenExp) >= -0.05) {
-            arma::mat posDevs = findPositionDeviations(simPos, expPos);
-            arma::vec validPosDevs = dropNaNs(arma::sum(arma::square(posDevs), 1));
-            posChi2 = !validPosDevs.is_empty() ? arma::median(validPosDevs) : 200;
-
-            // arma::vec enDevs = findEnergyDeviation(simPos, simEn, expMesh);
-            // arma::vec validEnDevs = dropNaNs(arma::square(enDevs));
-            // enChi2 = !validEnDevs.is_empty() ? arma::mean(validEnDevs) : 200;
+        arma::mat posDevs = findPositionDeviations(simPos, expPos);
+        if (!posDevs.is_empty()) {
+            double clampMax = 3;
+            arma::vec validPosDevs = replaceNaNs(arma::sum(arma::square(posDevs), 1), clampMax);
+            posChi2 = arma::sum(arma::clamp(validPosDevs, 0, clampMax)) / validPosDevs.n_elem;
         }
         else {
-            posChi2 = 300;
-            // enChi2 = 300;
+            posChi2 = 200;
         }
 
-        return {posChi2, enChi2};
+        // arma::vec enDevs = findEnergyDeviation(simPos, simEn, expMesh);
+        // arma::vec validEnDevs = replaceNaNs(arma::square(enDevs), 10);
+        // enChi2 = arma::sum(arma::clamp(validEnDevs, 0, 100)) / validEnDevs.n_elem;
+
+        return std::make_tuple(posChi2, enChi2);
     }
 
     arma::mat MCminimizer::makeParams(const arma::vec& ctr, const arma::vec& sigma, const unsigned numSets,
@@ -143,7 +171,7 @@ namespace mcopt
                 enChi2s(j) = enChi2;
             }
 
-            arma::vec totChis = posChi2s; //+ enChi2s;
+            arma::vec totChis = posChi2s; // + enChi2s;
 
             arma::uword minChiLoc = 0;
             totChis.min(minChiLoc);
