@@ -48,8 +48,8 @@ namespace mcopt
         EventGenerator(const PadPlane& pads, const arma::vec& vd, const double clock, const double shape,
                        const unsigned massNum, const double ioniz, const double gain, const double tilt,
                        const arma::vec& beamCtr = arma::zeros<arma::vec>(3))
-            : pads(pads), vd(vd), clock(clock), shape(shape), massNum(massNum), ioniz(ioniz), gain(gain),
-              tilt(tilt), beamCtr(beamCtr), pulseTemplate(elecPulse(1, shape, clock, 0)) {}
+            : vd(vd), massNum(massNum), ioniz(ioniz), gain(gain), tilt(tilt), beamCtr(beamCtr), pads(pads),
+              clock(clock), shape(shape), pulseTemplate(elecPulse(1, shape, clock, 0)) {}
 
         std::map<pad_t, arma::vec> makeEvent(const Track& tr) const;
         std::map<pad_t, arma::vec> makeEvent(const arma::mat& pos, const arma::vec& en) const;
@@ -59,17 +59,23 @@ namespace mcopt
         arma::vec makeMeshSignal(const Track& tr) const;
         arma::vec makeMeshSignal(const arma::mat& pos, const arma::vec& en) const;
 
+        double getClock() const { return clock; }
+        void setClock(const double c) { clock = c; pulseTemplate = elecPulse(1, shape, clock, 0); }
+        double getShape() const { return shape; }
+        void setShape(const double s) { shape = s; pulseTemplate = elecPulse(1, shape, clock, 0); }
+
+        arma::vec vd;
+        unsigned massNum;
+        double ioniz;
+        double gain;
+        double tilt;
+        arma::vec3 beamCtr;
+
     private:
         const PadPlane pads;
-        const arma::vec vd;
-        const double clock;
-        const double shape;
-        const unsigned massNum;
-        const double ioniz;
-        const double gain;
-        const double tilt;
-        const arma::vec3 beamCtr;
-        const arma::vec pulseTemplate;  // Precalculated GET electronics pulse. Speeds up inner loop.
+        double clock;
+        double shape;
+        arma::vec pulseTemplate;  // Precalculated GET electronics pulse. Speeds up inner loop.
     };
 
     class Trigger
