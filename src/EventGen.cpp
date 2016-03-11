@@ -143,7 +143,7 @@ namespace mcopt
         std::vector<arma::rowvec> rows;
         for (const auto& pair : evt) {
             const auto& padNum = pair.first;
-            arma::uword maxTB;
+            arma::uword maxTB = 511;  // Initialize to a default value in case there's no max
             double maxVal = pair.second.max(maxTB);  // This stores the location of the max in its argument
             auto xy = pads.getPadCenter(padNum);
             rows.push_back(arma::rowvec{xy.at(0), xy.at(1), (maxTB - offset), maxVal,

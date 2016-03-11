@@ -71,8 +71,8 @@ namespace mcopt
         arma::interp1(expPos.col(2), expPos.col(1), interpBins, expInterpY);
 
         arma::mat result (simInterpX.n_rows, 2);
-        result.col(0) = (simInterpX - expInterpX) / 0.5e-2;  // Valid?
-        result.col(1) = (simInterpY - expInterpY) / 0.5e-2;
+        result.col(0) = (simInterpX - expInterpX) / expPos.col(0).max();
+        result.col(1) = (simInterpY - expInterpY) / expPos.col(1).max();
 
         return result;
     }

@@ -36,7 +36,7 @@ TEST_CASE("Calculated deviations are correct", "[deviations]")
         INFO("B = " << B);
         INFO("devs = " << devs);
 
-        REQUIRE(arma::all(devs.col(0) + c < 1e-6));
+        REQUIRE(arma::all(devs.col(0) * B.col(0).max() + c < 1e-6));
         REQUIRE(arma::all(devs.col(1) < 1e-6));
     }
 
@@ -53,7 +53,7 @@ TEST_CASE("Calculated deviations are correct", "[deviations]")
         INFO("devs = " << devs);
 
         REQUIRE(arma::all(devs.col(0) < 1e-6));
-        REQUIRE(arma::all(devs.col(1) + c < 1e-6));
+        REQUIRE(arma::all(devs.col(1) * B.col(1).max() + c < 1e-6));
     }
 }
 
