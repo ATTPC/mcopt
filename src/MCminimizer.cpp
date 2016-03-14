@@ -92,9 +92,9 @@ namespace mcopt
             posChi2 = 200;
         }
 
-        // arma::vec enDevs = findEnergyDeviation(simPos, simEn, expMesh);
-        // arma::vec validEnDevs = replaceNaNs(arma::square(enDevs), 10);
-        // enChi2 = arma::sum(arma::clamp(validEnDevs, 0, 100)) / validEnDevs.n_elem;
+        arma::vec enDevs = findEnergyDeviation(simPos, simEn, expMesh);
+        arma::vec validEnDevs = dropNaNs(arma::square(enDevs));
+        enChi2 = arma::sum(arma::clamp(validEnDevs, 0, 100)) / validEnDevs.n_elem;
 
         return std::make_tuple(posChi2, enChi2);
     }
@@ -156,7 +156,7 @@ namespace mcopt
                 enChi2s(j) = enChi2;
             }
 
-            arma::vec totChis = posChi2s; // + enChi2s;
+            arma::vec totChis = posChi2s + enChi2s;
 
             arma::uword minChiLoc = 0;
             totChis.min(minChiLoc);
