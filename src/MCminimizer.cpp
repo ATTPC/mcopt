@@ -49,30 +49,15 @@ namespace mcopt
         // Assume also that the matrices are structured as:
         //     (x, y, z, ...)
 
-        double minZ = std::min(simPos.col(2).min(), expPos.col(2).min());
-        double maxZ = std::max(simPos.col(2).max(), expPos.col(2).max());
-        arma::uword numBins = static_cast<arma::uword>(std::floor((maxZ - minZ)*1000));  // 1 mm bins in z
+        arma::vec xInterp;
+        arma::vec yInterp;
 
-        arma::vec interpBins (numBins);
-        for (arma::uword i = 0; i < interpBins.n_elem; i++) {
-            interpBins(i) = minZ + (i / 1000.0);
-        }
+        arma::interp1(simPos.col(2), simPos.col(0), expPos.col(2), xInterp);
+        arma::interp1(simPos.col(2), simPos.col(1), expPos.col(2), yInterp);
 
-        assert(std::abs(interpBins.max() + 0.001 - maxZ) < 1e-3);
-
-        arma::vec simInterpX;
-        arma::vec simInterpY;
-        arma::vec expInterpX;
-        arma::vec expInterpY;
-
-        arma::interp1(simPos.col(2), simPos.col(0), interpBins, simInterpX);
-        arma::interp1(simPos.col(2), simPos.col(1), interpBins, simInterpY);
-        arma::interp1(expPos.col(2), expPos.col(0), interpBins, expInterpX);
-        arma::interp1(expPos.col(2), expPos.col(1), interpBins, expInterpY);
-
-        arma::mat result (simInterpX.n_rows, 2);
-        result.col(0) = (simInterpX - expInterpX) / expPos.col(0).max();
-        result.col(1) = (simInterpY - expInterpY) / expPos.col(1).max();
+        arma::mat result (xInterp.n_rows, 2);
+        result.col(0) = (xInterp - expPos.col(0)) / 0.5e-2;
+        result.col(1) = (yInterp - expPos.col(1)) / 0.5e-2;
 
         return result;
     }
