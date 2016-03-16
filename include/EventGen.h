@@ -22,7 +22,7 @@ namespace mcopt
 
     arma::vec squareWave(const arma::uword size, const arma::uword leftEdge,
                          const arma::uword width, const double height);
-    arma::vec elecPulse(const double amplitude, const double shape, const double clock, const arma::uword offset);
+    arma::vec elecPulse(const double amplitude, const double shape, const double clock, const double offset);
 
     struct Peak
     {

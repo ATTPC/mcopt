@@ -62,15 +62,21 @@ namespace mcopt
         return res;
     }
 
-    arma::vec elecPulse(const double amplitude, const double shape, const double clock, const arma::uword offset)
+    static inline double approxSin(const double t)
+    {
+        return t - t*t*t / 6 + t*t*t*t*t / 120 - t*t*t*t*t*t*t / 5040;
+    }
+
+    arma::vec elecPulse(const double amplitude, const double shape, const double clock, const double offset)
     {
         arma::vec res (512, arma::fill::zeros);
 
         double s = shape * clock;  // IMPORTANT: shape and clock must have compatible units, e.g. MHz and us.
 
-        for (arma::uword i = offset; i < res.n_rows; i++) {
+        arma::uword firstPt = static_cast<arma::uword>(std::ceil(offset));
+        for (arma::uword i = firstPt; i < res.n_rows; i++) {
             double t = (i - offset) / s;
-            res(i) = amplitude * std::exp(-3*t) * std::sin(t) * std::pow(t, 3) / 0.044;
+            res(i) = amplitude * std::exp(-3*t) * approxSin(t) * t*t*t / 0.044;
         }
         return res;
     }
@@ -88,7 +94,7 @@ namespace mcopt
         arma::mat posTilted = unTiltAndRecenter(pos, beamCtr, tilt);
         arma::mat uncal = uncalibrate(posTilted, vd, clock);
         arma::uvec ne = arma::conv_to<arma::uvec>::from(arma::floor(-arma::diff(en * 1e6 * massNum) / ioniz));
-        arma::Col<unsigned> tbs = arma::conv_to<arma::Col<unsigned>>::from(arma::floor(uncal.col(2)));
+        arma::vec tbs = uncal.col(2);
 
         std::map<pad_t, arma::vec> result;
 
@@ -100,13 +106,11 @@ namespace mcopt
                     // This means that the signal was just default-constructed by std::map::operator[]
                     padSignal.zeros(512);
                 }
-                unsigned offset = tbs(i);
+                double offset = tbs(i);
                 // if (offset > 511) throw TBOverflow(std::to_string(offset));
                 if (offset > 511) continue;
 
-                // Use a precalculated pulse shape that just needs to be scaled and shifted. This is much faster.
-                arma::vec::fixed<512> pulse (arma::fill::zeros);
-                pulse(arma::span(offset, 511)) = gain * ne(i) * pulseTemplate(arma::span(0, 511-offset));
+                arma::vec pulse = elecPulse(gain * ne(i), shape, clock, offset);
                 padSignal += pulse;
             }
         }
@@ -143,10 +147,16 @@ namespace mcopt
         std::vector<arma::rowvec> rows;
         for (const auto& pair : evt) {
             const auto& padNum = pair.first;
-            arma::uword maxTB = 511;  // Initialize to a default value in case there's no max
-            double maxVal = pair.second.max(maxTB);  // This stores the location of the max in its argument
+            const auto& sig = pair.second;
+
+            // Find center of gravity of the peak
+            arma::uvec pkPts = arma::find(sig > 0.3*sig.max());
+            arma::vec pkVals = sig.elem(pkPts);
+            double pkCtrGrav = arma::dot(pkPts, pkVals) / arma::sum(pkVals);
+
+            double maxVal = sig.max();
             auto xy = pads.getPadCenter(padNum);
-            rows.push_back(arma::rowvec{xy.at(0), xy.at(1), (maxTB - offset), maxVal,
+            rows.push_back(arma::rowvec{xy.at(0), xy.at(1), (pkCtrGrav - offset), maxVal,
                                         static_cast<double>(padNum)});
         }
 
