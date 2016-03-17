@@ -142,7 +142,7 @@ namespace mcopt
     {
         std::map<pad_t, arma::vec> evt = makeEvent(pos, en);
 
-        const double offset = shape * clock;  // Shaping time shifts the peak toward higher TBs
+        const double offset = 1.31667 * shape * clock;  // Shaping time shifts the peak toward higher TBs
 
         std::vector<arma::rowvec> rows;
         for (const auto& pair : evt) {
