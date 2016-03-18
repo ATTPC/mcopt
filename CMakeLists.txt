@@ -1,8 +1,10 @@
 cmake_minimum_required(VERSION 3.1)
 project(mcopt VERSION 2.1.1)
 
+# ============================
+# Set build flags and settings
+# ============================
 
-# Set up RPATH for build products
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 #set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
@@ -13,6 +15,7 @@ if(APPLE)
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -gdwarf-2")
     set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -gdwarf-2")
 endif()
+
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -DARMA_NO_DEBUG")
 
 if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
@@ -26,6 +29,10 @@ if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Intel")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 endif()
 
+# ==============
+# Find libraries
+# ==============
+
 find_package(OpenMP)
 if("${OPENMP_FOUND}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
@@ -37,27 +44,36 @@ endif()
 find_package(Armadillo REQUIRED)
 include_directories(SYSTEM ${ARMADILLO_INCLUDE_DIRS})
 
+find_package(HDF5 COMPONENTS CXX)
+if(HDF5_FOUND)
+    include_directories(SYSTEM ${HDF5_INCLUDE_DIRS})
+    add_definitions(-DHAVE_HDF5)
+endif()
+
+# ==============
+# Set up targets
+# ==============
+
 include_directories(include)
 
 set(MCOPT_SRC src/EventGen.cpp src/MCminimizer.cpp src/PadPlane.cpp src/Track.cpp src/Tracker.cpp src/PadMap.cpp)
 
 add_library(mcopt SHARED ${MCOPT_SRC})
 target_link_libraries(mcopt ${ARMADILLO_LIBRARIES})
+if(HDF5_FOUND)
+    target_link_libraries(mcopt ${HDF5_CXX_LIBRARIES})
+endif()
 
 set(TEST_MCOPT_SRC test/catch_main.cpp test/test_mcopt.cpp test/test_EventGen.cpp test/test_PadPlane.cpp)
 
 add_executable(test_mcopt ${TEST_MCOPT_SRC})
 target_link_libraries(test_mcopt ${ARMADILLO_LIBRARIES} mcopt)
-
-install(TARGETS mcopt EXPORT mcoptTargets
-        LIBRARY DESTINATION lib)
-
-install(DIRECTORY include/ DESTINATION include/mcopt FILES_MATCHING PATTERN "*.h")
-
-find_package(HDF5 COMPONENTS CXX)
 if(HDF5_FOUND)
-    include_directories(SYSTEM ${HDF5_INCLUDE_DIRS})
+    target_link_libraries(test_mcopt ${HDF5_CXX_LIBRARIES})
+    file(COPY "test/LUT.h5" DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+endif()
 
+if(HDF5_FOUND)
     add_executable(prof_tracker EXCLUDE_FROM_ALL prof/prof_tracker.cpp prof/utils.cpp)
     target_link_libraries(prof_tracker ${ARMADILLO_LIBRARIES} mcopt ${HDF5_CXX_LIBRARIES})
 
@@ -66,6 +82,15 @@ if(HDF5_FOUND)
 
     add_custom_target(prof DEPENDS prof_tracker prof_evtgen)
 endif()
+
+# ==============
+# Set up install
+# ==============
+
+install(TARGETS mcopt EXPORT mcoptTargets
+        LIBRARY DESTINATION lib)
+
+install(DIRECTORY include/ DESTINATION include/mcopt FILES_MATCHING PATTERN "*.h")
 
 include(CMakePackageConfigHelpers)
 

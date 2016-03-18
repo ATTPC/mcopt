@@ -35,6 +35,11 @@ namespace mcopt {
                 {x_offset + side, y_offset}};
     }
 
+    static inline double roundToEven(const double v)
+    {
+        return v >= 0.0 ? std::floor(v + 0.5) : std::ceil(v - 0.5);
+    }
+
     std::vector<std::vector<std::vector<double>>>
     PadPlane::generatePadCoordinates(const double rotation_angle)
     {
@@ -54,8 +59,8 @@ namespace mcopt {
         double large_y_spacing = small_y_spacing;
         double large_tri_side = dotted_l_tri_side - 4 * large_x_spacing;
         double large_tri_hi = dotted_l_tri_side * std::sqrt(3) / 2;
-        int row_len_s = static_cast<int>(std::pow(2, std::ceil(std::log(beam_image_radius / dotted_s_tri_side) / std::log(2))));
-        int row_len_l = static_cast<int>(std::floor(umega_radius / dotted_l_tri_hi));
+        double row_len_s = std::pow(2, std::ceil(std::log(beam_image_radius / dotted_s_tri_side) / std::log(2)));
+        double row_len_l = std::floor(umega_radius / dotted_l_tri_hi);
 
         double xoff = 0;
         double yoff = 0;
@@ -66,17 +71,17 @@ namespace mcopt {
             std::vector<std::vector<double>>(3, std::vector<double>(2, 0))); // Initializes the results
 
         for (int j = 0; j < row_len_l; j++) {
-            int pads_in_half_hex = 0;
-            int pads_in_hex = 0;
-            double row_length = std::abs(std::sqrt(std::pow(umega_radius, 2) - std::pow(j * dotted_l_tri_hi + dotted_l_tri_hi / 2, 2)));
+            double pads_in_half_hex = 0;
+            double pads_in_hex = 0;
+            double row_length = std::abs(std::sqrt(std::pow(umega_radius, 2) - std::pow(j * dotted_l_tri_hi + dotted_l_tri_hi / 2.0, 2)));
 
-            if (j < row_len_s / 2) {
-                pads_in_half_hex = (2 * row_len_s - 2 * j) / 4;
+            if (j < row_len_s / 2.0) {
+                pads_in_half_hex = (2 * row_len_s - 2 * j) / 4.0;
                 pads_in_hex = 2 * row_len_s - 1 - 2 * j;
             }
 
             double pads_in_half_row = row_length / dotted_l_tri_side;
-            int pads_out_half_hex = static_cast<int>(std::round(2 * (pads_in_half_row - pads_in_half_hex)));
+            int pads_out_half_hex = static_cast<int>(roundToEven(2 * (pads_in_half_row - pads_in_half_hex)));
             int pads_in_row = 2 * pads_out_half_hex + 4 * pads_in_half_hex - 1;
 
             int ort = 1;
@@ -94,10 +99,10 @@ namespace mcopt {
                     ort = -ort;
                 }
 
-                double pad_x_off = -(pads_in_half_hex + pads_out_half_hex / 2) * dotted_l_tri_side
+                double pad_x_off = -(pads_in_half_hex + pads_out_half_hex / 2.0) * dotted_l_tri_side
                                    + i * dotted_l_tri_side / 2 + 2 * large_x_spacing + xoff;
 
-                if ((i < pads_out_half_hex) || (i > pads_in_hex + pads_out_half_hex - 1) || (j > row_len_s / 2 - 1)) {
+                if ((i < pads_out_half_hex) || (i > pads_in_hex + pads_out_half_hex - 1) || (j > row_len_s / 2.0 - 1)) {
                     // Outside hex
                     double pad_y_off = j * dotted_l_tri_hi + large_y_spacing + yoff;
                     if (ort == -1) {
@@ -117,7 +122,7 @@ namespace mcopt {
                     pads.at(pad_index) = create_triangle(pad_x_off, pad_y_off, small_tri_side, ort);
                     pad_index += 1;
 
-                    double tmp_pad_x_off = pad_x_off + dotted_s_tri_side / 2;
+                    double tmp_pad_x_off = pad_x_off + dotted_s_tri_side / 2.0;
                     double tmp_pad_y_off = pad_y_off + ort * dotted_s_tri_hi - 2 * ort * small_y_spacing;
                     pads.at(pad_index) = create_triangle(tmp_pad_x_off, tmp_pad_y_off, small_tri_side, -ort);
                     pad_index += 1;
@@ -164,4 +169,33 @@ namespace mcopt {
 
         return {(v1.at(0) + v2.at(0) + v3.at(0)) / 3, (v1.at(1) + v2.at(1) + v3.at(1)) / 3};
     }
+
+#ifdef HAVE_HDF5
+    arma::Mat<uint16_t> readLUT(const std::string& path)
+    {
+        H5::H5File file (path.c_str(), H5F_ACC_RDONLY);
+        H5::DataSet ds = file.openDataSet("LUT");
+
+        H5::DataSpace filespace = ds.getSpace();
+        int ndims = filespace.getSimpleExtentNdims();
+        if (ndims != 2) {
+            throw std::runtime_error("LUT in HDF5 file had the wrong number of dimensions");
+        }
+        hsize_t dims[2] = {1, 1};
+        filespace.getSimpleExtentDims(dims);
+
+        H5::DataSpace memspace (ndims, dims);
+
+        arma::Mat<uint16_t> res (dims[0], dims[1]);
+
+        ds.read(res.memptr(), H5::PredType::NATIVE_UINT16, memspace, filespace);
+
+        // NOTE: Armadillo stores data in column-major order, while HDF5 uses
+        // row-major ordering. Above, we read the data directly from HDF5 into
+        // the arma matrix, so it was implicitly transposed. The next function
+        // fixes this problem.
+        arma::inplace_trans(res);
+        return res;
+    }
+#endif /* defined HAVE_HDF5 */
 }

@@ -4,6 +4,10 @@
 #include <armadillo>
 #include <vector>
 
+#ifdef HAVE_HDF5
+    #include <H5Cpp.h>
+#endif /* defined HAVE_HDF5 */
+
 namespace mcopt {
 
     class PadPlane
@@ -29,6 +33,10 @@ namespace mcopt {
         double cosRotAngle;
         const std::vector<std::vector<std::vector<double>>> padCoords;
     };
+
+#ifdef HAVE_HDF5
+    arma::Mat<uint16_t> readLUT(const std::string& path);
+#endif /* defined HAVE_HDF5 */
 
 }
 

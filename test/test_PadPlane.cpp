@@ -1,6 +1,8 @@
 #include "catch.hpp"
-#include "PadPlane.h"
+#include "mcopt.h"
 #include <vector>
+#include <armadillo>
+#include <cmath>
 
 TEST_CASE("Pad coordinates are generated correctly", "[PadPlane]")
 {
@@ -39,3 +41,19 @@ TEST_CASE("Pad coordinates are generated correctly", "[PadPlane]")
         }
     }
 }
+
+#ifdef HAVE_HDF5
+    TEST_CASE("Pad coordinates and LUT are consistent", "[PadPlane]")
+    {
+        arma::Mat<mcopt::pad_t> lut = mcopt::readLUT("LUT.h5");
+        mcopt::PadPlane plane (lut, -0.280, 0.0001, -0.280, 0.0001, 0);
+
+        for (mcopt::pad_t i = 0; i < 10240; i++) {
+            auto ctr = plane.getPadCenter(i);
+            mcopt::pad_t padNum = plane.getPadNumberFromCoordinates(ctr.at(0) * 1e-3, ctr.at(1) * 1e-3);
+            CAPTURE(ctr.at(0) * 1e-3);
+            CAPTURE(ctr.at(1) * 1e-3);
+            CHECK(padNum == i);
+        }
+    }
+#endif /* defined HAVE_HDF5 */

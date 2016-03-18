@@ -1,2 +1,3 @@
 -I./include
 -I/usr/local/hdf5/include
+-DHAVE_HDF5
