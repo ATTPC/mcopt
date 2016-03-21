@@ -70,8 +70,16 @@ namespace mcopt
         return (simMesh - expMesh) / sigma;
     }
 
+    arma::vec MCminimizer::findHitPatternDeviation(const arma::mat& simPos, const arma::vec& simEn,
+                                                   const arma::vec& expHits) const
+    {
+        arma::vec simHits = evtgen.makeHitPattern(simPos, simEn);
+        double sigma = expHits.max() * 0.10;
+        return (simHits - expHits) / sigma;
+    }
+
     std::tuple<double, double> MCminimizer::runTrack(const arma::vec& params, const arma::mat& expPos,
-                                                     const arma::vec& expMesh) const
+                                                     const arma::vec& expHits) const
     {
         arma::vec3 thisBfield = {0, 0, params(6)};
 
@@ -84,7 +92,7 @@ namespace mcopt
 
         arma::mat posDevs = findPositionDeviations(simPos, expPos);
         if (!posDevs.is_empty()) {
-            double clampMax = 3;
+            double clampMax = 100.0;
             arma::vec validPosDevs = replaceNaNs(arma::sum(arma::square(posDevs), 1), clampMax);
             posChi2 = arma::sum(arma::clamp(validPosDevs, 0, clampMax)) / validPosDevs.n_elem;
         }
@@ -92,9 +100,10 @@ namespace mcopt
             posChi2 = 200;
         }
 
-        arma::vec enDevs = findEnergyDeviation(simPos, simEn, expMesh);
+        arma::vec enDevs = findHitPatternDeviation(simPos, simEn, expHits);
         arma::vec validEnDevs = dropNaNs(arma::square(enDevs));
-        enChi2 = arma::sum(arma::clamp(validEnDevs, 0, 100)) / validEnDevs.n_elem;
+        arma::vec nonzeroExpHits = arma::nonzeros(expHits);  // Have to do this in its own step, or it won't compile
+        enChi2 = arma::sum(arma::clamp(validEnDevs, 0, 100)) / nonzeroExpHits.n_elem;
 
         return std::make_tuple(posChi2, enChi2);
     }

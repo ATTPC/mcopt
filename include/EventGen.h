@@ -51,6 +51,8 @@ namespace mcopt
             : vd(vd), massNum(massNum), ioniz(ioniz), gain(gain), tilt(tilt), beamCtr(beamCtr), pads(pads),
               clock(clock), shape(shape), pulseTemplate(elecPulse(1, shape, clock, 0)) {}
 
+
+        arma::vec numElec(const arma::vec& en) const;
         std::map<pad_t, arma::vec> makeEvent(const Track& tr) const;
         std::map<pad_t, arma::vec> makeEvent(const arma::mat& pos, const arma::vec& en) const;
         std::map<uint16_t, Peak> makePeaksFromSimulation(const Track& tr) const;
@@ -58,6 +60,7 @@ namespace mcopt
         arma::mat makePeaksTableFromSimulation(const arma::mat& pos, const arma::vec& en) const;
         arma::vec makeMeshSignal(const Track& tr) const;
         arma::vec makeMeshSignal(const arma::mat& pos, const arma::vec& en) const;
+        arma::vec makeHitPattern(const arma::mat& pos, const arma::vec& en) const;
 
         double getClock() const { return clock; }
         void setClock(const double c) { clock = c; pulseTemplate = elecPulse(1, shape, clock, 0); }

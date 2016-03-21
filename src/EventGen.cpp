@@ -81,6 +81,11 @@ namespace mcopt
         return res;
     }
 
+    arma::vec EventGenerator::numElec(const arma::vec& en) const
+    {
+        return arma::floor(-arma::diff(en * 1e6 * massNum) / ioniz);
+    }
+
     std::map<pad_t, arma::vec> EventGenerator::makeEvent(const Track& tr) const
     {
         arma::mat trMat = tr.getMatrix();
@@ -93,7 +98,7 @@ namespace mcopt
     {
         arma::mat posTilted = unTiltAndRecenter(pos, beamCtr, tilt);
         arma::mat uncal = uncalibrate(posTilted, vd, clock);
-        arma::uvec ne = arma::conv_to<arma::uvec>::from(arma::floor(-arma::diff(en * 1e6 * massNum) / ioniz));
+        arma::vec ne = numElec(en);
         arma::vec tbs = uncal.col(2);
 
         std::map<pad_t, arma::vec> result;
@@ -185,6 +190,24 @@ namespace mcopt
         }
 
         return res;
+    }
+
+    arma::vec EventGenerator::makeHitPattern(const arma::mat& pos, const arma::vec& en) const
+    {
+        arma::mat posTilted = unTiltAndRecenter(pos, beamCtr, tilt);
+        arma::mat uncal = uncalibrate(posTilted, vd, clock);
+        arma::vec ne = numElec(en);
+
+        arma::vec hits (10240, arma::fill::zeros);
+
+        for (arma::uword i = 0; i < uncal.n_rows - 1; i++) {
+            pad_t pad = pads.getPadNumberFromCoordinates(uncal(i, 0), uncal(i, 1));
+            if (pad != 20000) {
+                hits(pad) += gain * ne(i);
+            }
+        }
+        
+        return hits;
     }
 
     Trigger::Trigger(const unsigned int padThreshMSB, const unsigned int padThreshLSB, const double trigWidth,
