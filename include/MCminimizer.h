@@ -14,6 +14,13 @@ namespace mcopt
     arma::vec dropNaNs(const arma::vec& data);
     arma::vec replaceNaNs(const arma::vec& data, const double replacementValue);
 
+    class Chi2Set
+    {
+    public:
+        double posChi2;
+        double enChi2;
+    };
+
     class MCminimizeResult
     {
     public:
@@ -36,7 +43,7 @@ namespace mcopt
         arma::vec findEnergyDeviation(const arma::mat& simPos, const arma::vec& simEn, const arma::vec& expMesh) const;
         arma::vec findHitPatternDeviation(const arma::mat& simPos, const arma::vec& simEn, const arma::vec& expHits) const;
         arma::mat prepareSimulatedTrackMatrix(const arma::mat& simtrack) const;
-        std::tuple<double, double> runTrack(const arma::vec& params, const arma::mat& expPos, const arma::vec& expHits) const;
+        Chi2Set runTrack(const arma::vec& params, const arma::mat& expPos, const arma::vec& expHits) const;
         MCminimizeResult minimize(const arma::vec& ctr0, const arma::vec& sigma0, const arma::mat& expPos,
                                   const arma::vec& expMesh, const unsigned numIters, const unsigned numPts,
                                   const double redFactor) const;

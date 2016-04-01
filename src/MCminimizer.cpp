@@ -78,7 +78,7 @@ namespace mcopt
         return (simHits - expHits) / sigma;
     }
 
-    std::tuple<double, double> MCminimizer::runTrack(const arma::vec& params, const arma::mat& expPos,
+    Chi2Set MCminimizer::runTrack(const arma::vec& params, const arma::mat& expPos,
                                                      const arma::vec& expHits) const
     {
         arma::vec3 thisBfield = {0, 0, params(6)};
@@ -105,7 +105,7 @@ namespace mcopt
         arma::vec nonzeroExpHits = arma::nonzeros(expHits);  // Have to do this in its own step, or it won't compile
         enChi2 = arma::sum(arma::clamp(validEnDevs, 0, 100)) / nonzeroExpHits.n_elem;
 
-        return std::make_tuple(posChi2, enChi2);
+        return Chi2Set {posChi2, enChi2};
     }
 
     arma::mat MCminimizer::makeParams(const arma::vec& ctr, const arma::vec& sigma, const unsigned numSets,
@@ -155,7 +155,9 @@ namespace mcopt
                 arma::vec p = arma::conv_to<arma::colvec>::from(params.row(j));
                 double posChi2, enChi2;
                 try {
-                    std::tie(posChi2, enChi2) = runTrack(p, expPos, expMesh);
+                    auto chiset = runTrack(p, expPos, expMesh);
+                    posChi2 = chiset.posChi2;
+                    enChi2 = chiset.enChi2;
                 }
                 catch (...) {
                     posChi2 = arma::datum::nan;
