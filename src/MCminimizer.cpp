@@ -78,6 +78,45 @@ namespace mcopt
         return (simHits - expHits) / sigma;
     }
 
+    double MCminimizer::findTotalSignalChi(const std::map<pad_t, arma::vec>& simEvt,
+                                           const std::map<pad_t, arma::vec>& expEvt) const
+    {
+        auto simIter = simEvt.cbegin();
+        auto expIter = expEvt.cbegin();
+
+        // Merging operation is (sim - exp)^2 for each TB
+
+        double accum = 0;
+
+        while (simIter != simEvt.cend() && expIter != expEvt.cend()) {
+            if (simIter->first < expIter->first) {
+                // This trace is only in the sim track
+                accum += arma::sum(arma::square(simIter->second));
+                simIter++;
+            }
+            else if (expIter->first < simIter->first) {
+                // This trace is only in the exp track
+                accum += arma::sum(arma::square(expIter->second));
+                expIter++;
+            }
+            else {
+                // This trace is in both tracks
+                accum += arma::sum(arma::square(simIter->second - expIter->second));
+                simIter++;
+                expIter++;
+            }
+        }
+        // Clean up any traces remaining in the other map after one map reaches the end
+        for (; simIter != simEvt.cend(); simIter++) {
+            accum += arma::sum(arma::square(simIter->second));
+        }
+        for (; expIter != expEvt.cend(); expIter++) {
+            accum += arma::sum(arma::square(expIter->second));
+        }
+
+        return accum;
+    }
+
     Chi2Set MCminimizer::runTrack(const arma::vec& params, const arma::mat& expPos,
                                                      const arma::vec& expHits) const
     {

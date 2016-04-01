@@ -110,6 +110,115 @@ TEST_CASE("Minimizer works", "[minimizer]")
     }
 }
 
+TEST_CASE("Total signal chi works", "[minimizer]")
+{
+    arma::arma_rng::set_seed(12345);
+
+    std::vector<double> eloss = arma::conv_to<std::vector<double>>::from(arma::randu<arma::vec>(100000));
+
+    unsigned massNum = 1;
+    unsigned chargeNum = 1;
+    arma::vec3 efield {0, 0, 1e3};
+    arma::vec3 bfield {0, 0, 1};
+    double ioniz = 10;
+    arma::vec3 vd {0, 0, 10};
+    double gain = 1;
+    double tilt = 0;
+    double shape = 200e-9;
+    double clock = 12.5e6;
+
+    mcopt::Tracker tracker (massNum, chargeNum, eloss, efield, bfield);
+
+    arma::Mat<mcopt::pad_t> mockLUT =
+        arma::conv_to<arma::Mat<mcopt::pad_t>>::from(arma::round(arma::randu<arma::mat>(5600, 5600) * 10000));
+    mcopt::PadPlane pads (mockLUT, -0.280, 0.0001, -0.280, 0.0001, 0);
+    mcopt::EventGenerator evtgen (pads, vd, clock, shape, massNum, ioniz, gain, tilt);
+
+    mcopt::MCminimizer minimizer (tracker, evtgen);
+
+    SECTION("Works if only signals on sim side")
+    {
+        std::map<mcopt::pad_t, arma::vec> simEvt;
+        for (mcopt::pad_t i = 0; i < 10; i++) {
+            simEvt.emplace(i, arma::ones<arma::vec>(512) * 2);
+        }
+
+        std::map<mcopt::pad_t, arma::vec> expEvt;
+
+        double expected = 512 * 10 * 4;
+        double result = minimizer.findTotalSignalChi(simEvt, expEvt);
+
+        REQUIRE(result == Approx(expected));
+    }
+
+    SECTION("Works if only signals on exp side")
+    {
+        std::map<mcopt::pad_t, arma::vec> expEvt;
+        for (mcopt::pad_t i = 0; i < 10; i++) {
+            expEvt.emplace(i, arma::ones<arma::vec>(512) * 2);
+        }
+
+        std::map<mcopt::pad_t, arma::vec> simEvt;
+
+        double expected = 512 * 10 * 4;
+        double result = minimizer.findTotalSignalChi(simEvt, expEvt);
+
+        REQUIRE(result == Approx(expected));
+    }
+
+    SECTION("Zero if identical")
+    {
+        std::map<mcopt::pad_t, arma::vec> expEvt;
+        std::map<mcopt::pad_t, arma::vec> simEvt;
+
+        for (mcopt::pad_t i = 0; i < 10; i++) {
+            expEvt.emplace(i, arma::ones<arma::vec>(512) * 2);
+            simEvt.emplace(i, arma::ones<arma::vec>(512) * 2);
+        }
+
+        double expected = 0;
+        double result = minimizer.findTotalSignalChi(simEvt, expEvt);
+
+        REQUIRE(result == Approx(expected));
+    }
+
+    SECTION("Works if more traces in exp")
+    {
+        std::map<mcopt::pad_t, arma::vec> expEvt;
+        std::map<mcopt::pad_t, arma::vec> simEvt;
+
+        for (mcopt::pad_t i = 0; i < 10; i++) {
+            expEvt.emplace(i, arma::ones<arma::vec>(512) * 2);
+        }
+        for (mcopt::pad_t i = 0; i < 5; i++) {
+            simEvt.emplace(i, arma::ones<arma::vec>(512) * 2);
+        }
+
+        double expected = 5 * 512 * 4;
+        double result = minimizer.findTotalSignalChi(simEvt, expEvt);
+
+        REQUIRE(result == Approx(expected));
+    }
+
+    SECTION("Works if more traces in sim")
+    {
+        std::map<mcopt::pad_t, arma::vec> expEvt;
+        std::map<mcopt::pad_t, arma::vec> simEvt;
+
+        for (mcopt::pad_t i = 0; i < 5; i++) {
+            expEvt.emplace(i, arma::ones<arma::vec>(512) * 2);
+        }
+        for (mcopt::pad_t i = 0; i < 10; i++) {
+            simEvt.emplace(i, arma::ones<arma::vec>(512) * 2);
+        }
+
+        double expected = 5 * 512 * 4;
+        double result = minimizer.findTotalSignalChi(simEvt, expEvt);
+
+        REQUIRE(result == Approx(expected));
+    }
+}
+
 TEST_CASE("dropNaNs function works", "[dropNaNs]")
 {
     auto nan = arma::datum::nan;
