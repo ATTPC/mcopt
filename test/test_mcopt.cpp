@@ -62,7 +62,7 @@ TEST_CASE("Minimizer works", "[minimizer]")
     arma::arma_rng::set_seed(12345);
 
     arma::mat expPos = arma::randu<arma::mat>(100, 4);
-    arma::vec expMesh = arma::randu<arma::vec>(512);
+    arma::vec expMesh = arma::randu<arma::vec>(10240);
 
     std::vector<double> eloss = arma::conv_to<std::vector<double>>::from(arma::randu<arma::vec>(100000));
 
