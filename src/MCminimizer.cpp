@@ -147,6 +147,27 @@ namespace mcopt
         return Chi2Set {posChi2, enChi2};
     }
 
+    arma::mat MCminimizer::runTracks(const arma::mat& params, const arma::mat& expPos, const arma::vec& expHits) const
+    {
+        arma::mat chis (params.n_rows, 2);
+
+        #pragma omp parallel for schedule(static) shared(chis)
+        for (unsigned j = 0; j < params.n_rows; j++) {
+            arma::vec p = arma::conv_to<arma::colvec>::from(params.row(j));
+            try {
+                auto chiset = runTrack(p, expPos, expHits);
+                chis(j, 0) = chiset.posChi2;
+                chis(j, 1) = chiset.enChi2;
+            }
+            catch (...) {
+                chis(j, 0) = arma::datum::nan;
+                chis(j, 1) = arma::datum::nan;
+            }
+        }
+
+        return chis;
+    }
+
     arma::mat MCminimizer::makeParams(const arma::vec& ctr, const arma::vec& sigma, const unsigned numSets,
                                       const arma::vec& mins, const arma::vec& maxes)
     {
@@ -166,7 +187,7 @@ namespace mcopt
     }
 
     MCminimizeResult MCminimizer::minimize(const arma::vec& ctr0, const arma::vec& sigma0,
-                                           const arma::mat& expPos, const arma::vec& expMesh,
+                                           const arma::mat& expPos, const arma::vec& expHits,
                                            const unsigned numIters, const unsigned numPts, const double redFactor) const
     {
         arma::uword numVars = ctr0.n_rows;
@@ -186,27 +207,11 @@ namespace mcopt
 
         for (unsigned i = 0; i < numIters; i++) {
             arma::mat params = makeParams(ctr, sigma, numPts, mins, maxes);
-            arma::vec posChi2s (numPts, arma::fill::zeros);
-            arma::vec enChi2s (numPts, arma::fill::zeros);
 
-            #pragma omp parallel for schedule(static)
-            for (unsigned j = 0; j < numPts; j++) {
-                arma::vec p = arma::conv_to<arma::colvec>::from(params.row(j));
-                double posChi2, enChi2;
-                try {
-                    auto chiset = runTrack(p, expPos, expMesh);
-                    posChi2 = chiset.posChi2;
-                    enChi2 = chiset.enChi2;
-                }
-                catch (...) {
-                    posChi2 = arma::datum::nan;
-                    enChi2 = arma::datum::nan;
-                }
-                posChi2s(j) = posChi2;
-                enChi2s(j) = enChi2;
-            }
+            arma::mat chis = runTracks(params, expPos, expHits);
 
-            arma::vec totChis = posChi2s + enChi2s;
+            arma::vec totChis = arma::sum(chis, 1);
+            assert(totChis.n_rows == params.n_rows);
 
             arma::uword minChiLoc = 0;
             totChis.min(minChiLoc);
@@ -215,8 +220,8 @@ namespace mcopt
             sigma *= redFactor;
 
             allParams.rows(i*numPts, (i+1)*numPts-1) = params;
-            minPosChis(i) = posChi2s(minChiLoc);
-            minEnChis(i) = enChi2s(minChiLoc);
+            minPosChis(i) = chis(minChiLoc, 0);
+            minEnChis(i) = chis(minChiLoc, 1);
             goodParamIdx(i) = minChiLoc + i*numPts;
         }
 

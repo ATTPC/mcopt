@@ -45,6 +45,7 @@ namespace mcopt
         double findTotalSignalChi(const std::map<pad_t, arma::vec>& simEvt, const std::map<pad_t, arma::vec>& expEvt) const;
         arma::mat prepareSimulatedTrackMatrix(const arma::mat& simtrack) const;
         Chi2Set runTrack(const arma::vec& params, const arma::mat& expPos, const arma::vec& expHits) const;
+        arma::mat runTracks(const arma::mat& params, const arma::mat& expPos, const arma::vec& expHits) const;
         MCminimizeResult minimize(const arma::vec& ctr0, const arma::vec& sigma0, const arma::mat& expPos,
                                   const arma::vec& expMesh, const unsigned numIters, const unsigned numPts,
                                   const double redFactor) const;
