@@ -141,8 +141,8 @@ namespace mcopt
 
         arma::vec enDevs = findHitPatternDeviation(simPos, simEn, expHits);
         arma::vec validEnDevs = dropNaNs(arma::square(enDevs));
-        arma::vec nonzeroExpHits = arma::nonzeros(expHits);  // Have to do this in its own step, or it won't compile
-        enChi2 = arma::sum(arma::clamp(validEnDevs, 0, 100)) / nonzeroExpHits.n_elem;
+        arma::uvec nonzeroLocs = arma::find(expHits > 0);
+        enChi2 = arma::sum(arma::clamp(validEnDevs(nonzeroLocs), 0, 100)) / nonzeroLocs.n_elem;
 
         return Chi2Set {posChi2, enChi2};
     }
