@@ -25,8 +25,7 @@ namespace mcopt
     {
     public:
         Tracker(const unsigned massNum, const unsigned chargeNum, const std::vector<double>& eloss,
-                    const arma::vec3& efield, const arma::vec3& bfield)
-            : massNum(massNum), chargeNum(chargeNum), eloss(eloss), efield(efield), bfield(bfield) {}
+                const arma::vec3& efield, const arma::vec3& bfield);
 
         Track trackParticle(const double x0, const double y0, const double z0,
                             const double enu0,  const double azi0, const double pol0) const;
@@ -40,7 +39,10 @@ namespace mcopt
         void updateState(State& st, const double tstep) const;
 
         unsigned int massNum;
+        double mass_kg;
+        double mass_mc2;
         unsigned int chargeNum;
+        double charge;
         std::vector<double> eloss;
         arma::vec3 efield;
         arma::vec3 bfield;

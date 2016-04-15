@@ -35,7 +35,7 @@ int main(const int argc, const char** argv)
 
     std::vector<std::chrono::high_resolution_clock::duration> durations;
 
-    size_t numIters = 500;
+    size_t numIters = 50000;
 
     for (size_t i = 0; i < numIters; i++) {
         auto begin = std::chrono::high_resolution_clock::now();
@@ -45,13 +45,15 @@ int main(const int argc, const char** argv)
         durations.push_back(end - begin);
     }
 
-    auto totalDuration =
-        std::accumulate(durations.begin(), durations.end(), std::chrono::high_resolution_clock::duration::zero());
+    std::cout << "Ran " << durations.size() << " times" << std::endl;
 
-    double meanTime = static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(totalDuration).count()) / numIters;
+    auto minDuration =
+        std::min_element(durations.begin(), durations.end());
+
+    double meanTime = static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(*minDuration).count());
 
 
-    std::cout << "Mean tracking time: " << meanTime << " µs" << std::endl;
+    std::cout << "Min tracking time: " << meanTime << " µs" << std::endl;
 
     return 0;
 }

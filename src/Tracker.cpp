@@ -18,16 +18,21 @@ namespace mcopt
         }
     }
 
-    static inline double betaFactor(const double en, const double massNum)
+    static inline double betaFactor(const double en, const double mass_mc2)
     {
-        return (sqrt(en)*sqrt(en + 2*P_MC2*massNum)) / (en + massNum*P_MC2);
+        return sqrt(en * (en + 2*mass_mc2)) / (en + mass_mc2);
     }
+
+    Tracker::Tracker(const unsigned massNum, const unsigned chargeNum, const std::vector<double>& eloss,
+                     const arma::vec3& efield, const arma::vec3& bfield)
+        : massNum(massNum), mass_kg(massNum * P_KG), mass_mc2(massNum * P_MC2), chargeNum(chargeNum),
+          charge(chargeNum * E_CHG), eloss(eloss), efield(efield), bfield(bfield) {}
 
     void Tracker::updateState(State& st, const double tstep) const
     {
         arma::vec3 mom_si = st.mom * 1e6 * E_CHG / C_LGT;
 
-        double beta = betaFactor(st.en, massNum);
+        double beta = betaFactor(st.en, mass_mc2);
         if (beta < 1e-8) {
             st.pos = {0, 0, 0};
             st.mom = {0, 0, 0};
@@ -36,17 +41,17 @@ namespace mcopt
             return;
         }
 
-        double gamma = 1 / sqrt(1 - beta*beta);
+        double invgamma = sqrt(1 - beta*beta);  // equals 1 / gamma. This is faster to compute.
 
-        arma::vec3 vel = mom_si / (gamma * massNum * P_KG);
-        arma::vec3 force = chargeNum * E_CHG * (efield + arma::cross(vel, bfield));
+        arma::vec3 vel = mom_si * invgamma / mass_kg;
+        arma::vec3 force = charge * (efield + arma::cross(vel, bfield));
 
         arma::vec3 new_mom_si = mom_si + force * tstep;
         arma::vec3 new_mom = new_mom_si * 1e-6 / E_CHG * C_LGT;
 
         // NOTE: I'm assuming the Lorentz force doesn't change the energy appreciably.
 
-        arma::vec3 new_vel = new_mom_si / (gamma * massNum * P_KG);
+        arma::vec3 new_vel = new_mom_si * invgamma / mass_kg;
         arma::vec3 new_pos = st.pos + vel * tstep;
 
         assert(st.en >= 0);  // This is assumed by the cast to unsigned long in the next line.
@@ -74,8 +79,8 @@ namespace mcopt
             double en = threshold(st.en - de, 0);
             assert(en >= 0);
 
-            double new_mom_mag = sqrt(pow(en + massNum*P_MC2, 2) - pow(massNum*P_MC2, 2));
-            double old_mom_mag = arma::norm(new_mom);  // "old" means before eloss, in this case
+            double new_mom_mag = sqrt(pow(en + mass_mc2, 2) - pow(mass_mc2, 2));
+            double old_mom_mag = sqrt(arma::accu(arma::square(new_mom)));
             double mom_correction_factor = new_mom_mag / old_mom_mag;
 
             new_mom *= mom_correction_factor;
@@ -100,7 +105,7 @@ namespace mcopt
         const double en0 = enu0 * massNum;
         double current_time = 0;
 
-        double mom_mag = sqrt(pow(en0 + massNum*P_MC2, 2) - pow(massNum*P_MC2, 2));
+        double mom_mag = sqrt(pow(en0 + mass_mc2, 2) - pow(mass_mc2, 2));
         arma::vec::fixed<3> mom = {mom_mag * cos(azi0) * sin(pol0),
                                    mom_mag * sin(azi0) * sin(pol0),
                                    mom_mag * cos(pol0)};
@@ -113,7 +118,7 @@ namespace mcopt
         tr.append(st.pos(0), st.pos(1), st.pos(2), current_time, st.en / massNum, azi0, pol0);
 
         for (unsigned long i = 1; i < maxIters; i++) {
-            double beta = betaFactor(st.en, massNum);
+            double beta = betaFactor(st.en, mass_mc2);
             if (st.en < 1e-3 || beta < 1e-6) {
                 break;
             }
@@ -122,7 +127,7 @@ namespace mcopt
             updateState(st, tstep);
 
             double azi = atan2(st.mom(1), st.mom(0));
-            double pol = atan2(sqrt(pow(st.mom(0), 2) + pow(st.mom(1), 2)), st.mom(2));
+            double pol = atan2(sqrt(st.mom(0)*st.mom(0) + st.mom(1)*st.mom(1)), st.mom(2));
 
             current_time += tstep;
 
