@@ -30,9 +30,6 @@ namespace mcopt
 
         Track trackParticle(const double x0, const double y0, const double z0,
                             const double enu0,  const double azi0, const double pol0) const;
-        Track trackParticle(const double x0, const double y0, const double z0,
-                            const double enu0,  const double azi0, const double pol0,
-                            const arma::vec3& bfield) const;
 
         unsigned int getMassNum() const { return massNum; }
         unsigned int getChargeNum() const { return chargeNum; }
@@ -41,7 +38,6 @@ namespace mcopt
 
     private:
         void updateState(State& st, const double tstep) const;
-        void updateState(State& st, const double tstep, const arma::vec3& thisBfield) const;
 
         unsigned int massNum;
         unsigned int chargeNum;

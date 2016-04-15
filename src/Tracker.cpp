@@ -25,11 +25,6 @@ namespace mcopt
 
     void Tracker::updateState(State& st, const double tstep) const
     {
-        return updateState(st, tstep, this->bfield);
-    }
-
-    void Tracker::updateState(State& st, const double tstep, const arma::vec3& bfield) const
-    {
         arma::vec3 mom_si = st.mom * 1e6 * E_CHG / C_LGT;
 
         double beta = betaFactor(st.en, massNum);
@@ -97,13 +92,6 @@ namespace mcopt
     Track Tracker::trackParticle(const double x0, const double y0, const double z0,
                                      const double enu0,  const double azi0, const double pol0) const
     {
-        return trackParticle(x0, y0, z0, enu0, azi0, pol0, this->bfield);
-    }
-
-    Track Tracker::trackParticle(const double x0, const double y0, const double z0,
-                                     const double enu0,  const double azi0, const double pol0,
-                                     const arma::vec3& bfield) const
-    {
         const unsigned long maxIters = 10000;
 
         Track tr;
@@ -131,7 +119,7 @@ namespace mcopt
             }
             double tstep = POS_STEP / (beta * C_LGT);
 
-            updateState(st, tstep, bfield);
+            updateState(st, tstep);
 
             double azi = atan2(st.mom(1), st.mom(0));
             double pol = atan2(sqrt(pow(st.mom(0), 2) + pow(st.mom(1), 2)), st.mom(2));

@@ -120,9 +120,7 @@ namespace mcopt
     Chi2Set MCminimizer::runTrack(const arma::vec& params, const arma::mat& expPos,
                                                      const arma::vec& expHits) const
     {
-        arma::vec3 thisBfield = {0, 0, params(6)};
-
-        Track tr = tracker.trackParticle(params(0), params(1), params(2), params(3), params(4), params(5), thisBfield);
+        Track tr = tracker.trackParticle(params(0), params(1), params(2), params(3), params(4), params(5));
         arma::mat simPos = tr.getPositionMatrix();
         arma::vec simEn = tr.getEnergyVector();
 
