@@ -6,5 +6,7 @@
 #include "PadPlane.h"
 #include "EventGen.h"
 #include "MCminimizer.h"
+#include "Gas.h"
+#include "Exceptions.h"
 
 #endif /* def MCOPT_H */

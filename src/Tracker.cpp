@@ -23,10 +23,10 @@ namespace mcopt
         return sqrt(en * (en + 2*mass_mc2)) / (en + mass_mc2);
     }
 
-    Tracker::Tracker(const unsigned massNum, const unsigned chargeNum, const std::vector<double>& eloss,
+    Tracker::Tracker(const unsigned massNum, const unsigned chargeNum, const Gas& gas,
                      const arma::vec3& efield, const arma::vec3& bfield)
         : massNum(massNum), mass_kg(massNum * P_KG), mass_mc2(massNum * P_MC2), chargeNum(chargeNum),
-          charge(chargeNum * E_CHG), eloss(eloss), efield(efield), bfield(bfield) {}
+          charge(chargeNum * E_CHG), gas(gas), efield(efield), bfield(bfield) {}
 
     void Tracker::updateState(State& st, const double tstep) const
     {
@@ -54,16 +54,8 @@ namespace mcopt
         arma::vec3 new_vel = new_mom_si * invgamma / mass_kg;
         arma::vec3 new_pos = st.pos + vel * tstep;
 
-        assert(st.en >= 0);  // This is assumed by the cast to unsigned long in the next line.
-        size_t elossIdx = static_cast<size_t>(lround(st.en * 1000));  // Convert to keV, the index units
+        double stopping = gas.energyLoss(st.en);
 
-        double stopping;
-        try {
-            stopping = eloss.at(elossIdx);
-        }
-        catch (const std::out_of_range&) {
-            throw TrackingFailed("Energy loss index out of range.");
-        }
         double dpos = tstep * beta * C_LGT;
         double de = threshold(stopping*dpos, 0);
         assert(de >= 0);

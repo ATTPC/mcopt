@@ -4,6 +4,8 @@
 #include "Track.h"
 #include <armadillo>
 #include <vector>
+#include "Exceptions.h"
+#include "Gas.h"
 
 namespace mcopt
 {
@@ -24,7 +26,7 @@ namespace mcopt
     class Tracker
     {
     public:
-        Tracker(const unsigned massNum, const unsigned chargeNum, const std::vector<double>& eloss,
+        Tracker(const unsigned massNum, const unsigned chargeNum, const Gas& gas,
                 const arma::vec3& efield, const arma::vec3& bfield);
 
         Track trackParticle(const double x0, const double y0, const double z0,
@@ -43,19 +45,9 @@ namespace mcopt
         double mass_mc2;
         unsigned int chargeNum;
         double charge;
-        std::vector<double> eloss;
+        Gas gas;
         arma::vec3 efield;
         arma::vec3 bfield;
-    };
-
-    class TrackingFailed : public std::exception
-    {
-    public:
-        TrackingFailed(std::string m) : msg(m) {}
-        const char* what() const noexcept { return msg.c_str(); }
-
-    private:
-        std::string msg;
     };
 }
 

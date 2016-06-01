@@ -65,6 +65,7 @@ TEST_CASE("Minimizer works", "[minimizer]")
     arma::vec expMesh = arma::randu<arma::vec>(10240);
 
     std::vector<double> eloss = arma::conv_to<std::vector<double>>::from(arma::randu<arma::vec>(100000));
+    std::vector<double> enVsZ = arma::conv_to<std::vector<double>>::from(arma::vec(1000, arma::fill::ones));
 
     unsigned massNum = 1;
     unsigned chargeNum = 1;
@@ -80,7 +81,8 @@ TEST_CASE("Minimizer works", "[minimizer]")
     arma::vec ctr0 = {0, 0, 0.9, 1, 0, arma::datum::pi, 0};
     arma::vec sigma = {0, 0, 0.001, 0.5, 0.2, 0.2, 0.1};
 
-    mcopt::Tracker tracker (massNum, chargeNum, eloss, efield, bfield);
+    mcopt::Gas gas (eloss, enVsZ);
+    mcopt::Tracker tracker (massNum, chargeNum, gas, efield, bfield);
 
     arma::Mat<mcopt::pad_t> mockLUT =
         arma::conv_to<arma::Mat<mcopt::pad_t>>::from(arma::round(arma::randu<arma::mat>(5600, 5600) * 10000));
@@ -99,7 +101,8 @@ TEST_CASE("Minimizer works", "[minimizer]")
     SECTION("Minimizer doesn't throw when eloss is tiny")
     {
         eloss = arma::conv_to<std::vector<double>>::from(arma::randu<arma::vec>(100));
-        mcopt::Tracker tracker (massNum, chargeNum, eloss, efield, bfield);
+        mcopt::Gas gas (eloss, enVsZ);
+        mcopt::Tracker tracker (massNum, chargeNum, gas, efield, bfield);
         mcopt::MCminimizer minimizer (tracker, evtgen);
 
         ctr0(3) = 10;  // raise the energy
@@ -115,6 +118,7 @@ TEST_CASE("Total signal chi works", "[minimizer]")
     arma::arma_rng::set_seed(12345);
 
     std::vector<double> eloss = arma::conv_to<std::vector<double>>::from(arma::randu<arma::vec>(100000));
+    std::vector<double> enVsZ = arma::conv_to<std::vector<double>>::from(arma::vec(1000, arma::fill::ones));
 
     unsigned massNum = 1;
     unsigned chargeNum = 1;
@@ -127,7 +131,8 @@ TEST_CASE("Total signal chi works", "[minimizer]")
     double shape = 200e-9;
     double clock = 12.5e6;
 
-    mcopt::Tracker tracker (massNum, chargeNum, eloss, efield, bfield);
+    mcopt::Gas gas (eloss, enVsZ);
+    mcopt::Tracker tracker (massNum, chargeNum, gas, efield, bfield);
 
     arma::Mat<mcopt::pad_t> mockLUT =
         arma::conv_to<arma::Mat<mcopt::pad_t>>::from(arma::round(arma::randu<arma::mat>(5600, 5600) * 10000));

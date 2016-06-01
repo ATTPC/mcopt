@@ -119,7 +119,7 @@ namespace mcopt
 
     double MCminimizer::findVertexDeviationFromOrigin(const double x0, const double y0) const
     {
-        return (x0*x0 + y0*y0) / 0.5e-5;
+        return (x0*x0 + y0*y0) / 0.5e-4;
     }
 
     Chi2Set MCminimizer::runTrack(const arma::vec& params, const arma::mat& expPos,
