@@ -117,6 +117,11 @@ namespace mcopt
         return accum;
     }
 
+    double MCminimizer::findVertexDeviationFromOrigin(const double x0, const double y0) const
+    {
+        return (x0*x0 + y0*y0) / 0.5e-5;
+    }
+
     Chi2Set MCminimizer::runTrack(const arma::vec& params, const arma::mat& expPos,
                                                      const arma::vec& expHits) const
     {
@@ -126,6 +131,7 @@ namespace mcopt
 
         double posChi2 = 0;
         double enChi2 = 0;
+        double vertChi2 = 0;
 
         arma::mat posDevs = findPositionDeviations(simPos, expPos);
         if (!posDevs.is_empty()) {
@@ -142,12 +148,14 @@ namespace mcopt
         arma::uvec nonzeroLocs = arma::find(expHits > 0);
         enChi2 = arma::sum(arma::clamp(validEnDevs(nonzeroLocs), 0, 100)) / nonzeroLocs.n_elem;
 
-        return Chi2Set {posChi2, enChi2};
+        vertChi2 = findVertexDeviationFromOrigin(params(0), params(1));
+
+        return Chi2Set {posChi2, enChi2, vertChi2};
     }
 
     arma::mat MCminimizer::runTracks(const arma::mat& params, const arma::mat& expPos, const arma::vec& expHits) const
     {
-        arma::mat chis (params.n_rows, 2);
+        arma::mat chis (params.n_rows, 3);
 
         #pragma omp parallel for schedule(static) shared(chis)
         for (unsigned j = 0; j < params.n_rows; j++) {
@@ -156,10 +164,12 @@ namespace mcopt
                 auto chiset = runTrack(p, expPos, expHits);
                 chis(j, 0) = chiset.posChi2;
                 chis(j, 1) = chiset.enChi2;
+                chis(j, 2) = chiset.vertChi2;
             }
             catch (...) {
                 chis(j, 0) = arma::datum::nan;
                 chis(j, 1) = arma::datum::nan;
+                chis(j, 2) = arma::datum::nan;
             }
         }
 
@@ -188,7 +198,8 @@ namespace mcopt
                                            const arma::mat& expPos, const arma::vec& expHits,
                                            const unsigned numIters, const unsigned numPts, const double redFactor) const
     {
-        arma::uword numVars = ctr0.n_rows;
+        const arma::uword numVars = ctr0.n_rows;
+        const arma::uword numChis = 3;
 
         arma::vec mins = ctr0 - sigma0 / 2;
         if (mins(3) < 0) {
@@ -198,10 +209,7 @@ namespace mcopt
         arma::vec ctr = ctr0;
         arma::vec sigma = sigma0;
 
-        arma::mat allParams(numPts * numIters, numVars);
-        arma::vec minPosChis(numIters);
-        arma::vec minEnChis(numIters);
-        arma::vec goodParamIdx(numIters);
+        MCminimizeResult res (numVars, numPts, numIters, numChis);
 
         for (unsigned i = 0; i < numIters; i++) {
             arma::mat params = makeParams(ctr, sigma, numPts, mins, maxes);
@@ -217,18 +225,12 @@ namespace mcopt
             ctr = arma::conv_to<arma::colvec>::from(params.row(minChiLoc));
             sigma *= redFactor;
 
-            allParams.rows(i*numPts, (i+1)*numPts-1) = params;
-            minPosChis(i) = chis(minChiLoc, 0);
-            minEnChis(i) = chis(minChiLoc, 1);
-            goodParamIdx(i) = minChiLoc + i*numPts;
+            res.allParams.rows(i*numPts, (i+1)*numPts-1) = params;
+            res.minChis.row(i) = chis.row(minChiLoc);
+            res.goodParamIdx(i) = minChiLoc + i*numPts;
         }
 
-        MCminimizeResult res;
-        res.ctr = std::move(ctr);
-        res.allParams = std::move(allParams);
-        res.minPosChis = std::move(minPosChis);
-        res.minEnChis = std::move(minEnChis);
-        res.goodParamIdx = std::move(goodParamIdx);
+        res.ctr = ctr;
 
         return res;
     }
