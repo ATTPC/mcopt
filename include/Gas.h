@@ -16,10 +16,12 @@ namespace mcopt {
 
         double energyLoss(const double energy) const;
         double energyFromVertexZPosition(const double z) const;
+        double getProjectileStopPosition() const { return projStopLoc; }
 
     private:
         std::vector<double> elossData;  // Values in MeV/m indexed in keV
         std::vector<double> enVsZdata;  // Values in MeV indexed in mm
+        double projStopLoc;
     };
 
 }

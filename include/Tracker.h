@@ -5,6 +5,7 @@
 #include <armadillo>
 #include <vector>
 #include "Exceptions.h"
+#include "Constants.h"
 #include "Gas.h"
 
 namespace mcopt
@@ -36,6 +37,8 @@ namespace mcopt
         unsigned int getChargeNum() const { return chargeNum; }
         arma::vec3 getEfield() const { return efield; }
         arma::vec3 getBfield() const { return bfield; }
+
+        const Gas& getGas() const { return gas; }
 
     private:
         void updateState(State& st, const double tstep) const;

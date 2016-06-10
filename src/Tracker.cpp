@@ -1,10 +1,6 @@
 #include "Tracker.h"
 
-static const double C_LGT = 299792458.0;
-static const double E_CHG = 1.602176565e-19;
-static const double P_MC2 = 938.272046;
-static const double P_KG = 1.672621777e-27;
-static const double POS_STEP = 1e-3;
+using namespace mcopt::Constants;
 
 namespace mcopt
 {
