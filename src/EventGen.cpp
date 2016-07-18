@@ -91,7 +91,6 @@ namespace mcopt
 
     arma::mat EventGenerator::diffuseElectrons(const arma::mat& tr) const
     {
-        const double diffSigma = 0.5e-3;
         const double centerAmpl = 0.398942 / diffSigma;
         const double diffAmpl   = 0.241971 / diffSigma;
         const double diffSigmaDiag = diffSigma * std::sqrt(2);
