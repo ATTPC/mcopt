@@ -53,6 +53,7 @@ namespace mcopt
 
 
         arma::vec numElec(const arma::vec& en) const;
+        arma::mat prepareTrack(const arma::mat& pos, const arma::vec& en) const;
         std::map<pad_t, arma::vec> makeEvent(const Track& tr) const;
         std::map<pad_t, arma::vec> makeEvent(const arma::mat& pos, const arma::vec& en) const;
         std::map<uint16_t, Peak> makePeaksFromSimulation(const Track& tr) const;

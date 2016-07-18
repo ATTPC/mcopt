@@ -86,6 +86,23 @@ namespace mcopt
         return arma::floor(-arma::diff(en * 1e6 * massNum) / ioniz);
     }
 
+    arma::mat EventGenerator::prepareTrack(const arma::mat& pos, const arma::vec& en) const
+    {
+        // This creates a matrix with columns (x, y, z, numElec)
+
+        const arma::uword nrows = pos.n_rows;
+        const arma::uword ncols = 4;
+        assert(en.n_rows == nrows);
+
+        arma::mat result (pos.n_rows, ncols);
+
+        arma::mat posTilted = unTiltAndRecenter(pos, beamCtr, tilt);
+        result.cols(0, 2) = uncalibrate(posTilted, vd, clock);
+        result.col(3) = numElec(en);
+
+        return result;
+    }
+
     std::map<pad_t, arma::vec> EventGenerator::makeEvent(const Track& tr) const
     {
         arma::mat trMat = tr.getMatrix();
@@ -96,10 +113,7 @@ namespace mcopt
 
     std::map<pad_t, arma::vec> EventGenerator::makeEvent(const arma::mat& pos, const arma::vec& en) const
     {
-        arma::mat posTilted = unTiltAndRecenter(pos, beamCtr, tilt);
-        arma::mat uncal = uncalibrate(posTilted, vd, clock);
-        arma::vec ne = numElec(en);
-        arma::vec tbs = uncal.col(2);
+        arma::mat uncal = prepareTrack(pos, en);  // has columns (x, y, z, numElec)
 
         std::map<pad_t, arma::vec> result;
 
@@ -111,11 +125,11 @@ namespace mcopt
                     // This means that the signal was just default-constructed by std::map::operator[]
                     padSignal.zeros(512);
                 }
-                double offset = tbs(i);
+                double offset = uncal(i, 2);
                 // if (offset > 511) throw TBOverflow(std::to_string(offset));
                 if (offset > 511) continue;
 
-                arma::vec pulse = elecPulse(gain * ne(i), shape, clock, offset);
+                arma::vec pulse = elecPulse(gain * uncal(i, 3), shape, clock, offset);
                 padSignal += pulse;
             }
         }
@@ -194,19 +208,17 @@ namespace mcopt
 
     arma::vec EventGenerator::makeHitPattern(const arma::mat& pos, const arma::vec& en) const
     {
-        arma::mat posTilted = unTiltAndRecenter(pos, beamCtr, tilt);
-        arma::mat uncal = uncalibrate(posTilted, vd, clock);
-        arma::vec ne = numElec(en);
+        arma::mat uncal = prepareTrack(pos, en);
 
         arma::vec hits (10240, arma::fill::zeros);
 
         for (arma::uword i = 0; i < uncal.n_rows - 1; i++) {
             pad_t pad = pads.getPadNumberFromCoordinates(uncal(i, 0), uncal(i, 1));
             if (pad != 20000) {
-                hits(pad) += gain * ne(i);
+                hits(pad) += gain * uncal(i, 3);
             }
         }
-        
+
         return hits;
     }
 
