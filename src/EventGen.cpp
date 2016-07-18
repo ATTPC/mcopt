@@ -83,7 +83,10 @@ namespace mcopt
 
     arma::vec EventGenerator::numElec(const arma::vec& en) const
     {
-        return arma::floor(-arma::diff(en * 1e6 * massNum) / ioniz);
+        const arma::uword numPts = en.n_elem;
+        arma::vec result (numPts, arma::fill::zeros);
+        result(arma::span(1, numPts-1)) = arma::floor(-arma::diff(en * 1e6 * massNum) / ioniz);  // diff returns N-1 points
+        return result;
     }
 
     arma::mat EventGenerator::prepareTrack(const arma::mat& pos, const arma::vec& en) const

@@ -126,6 +126,10 @@ namespace mcopt
                                                      const arma::vec& expHits) const
     {
         Track tr = tracker.trackParticle(params(0), params(1), params(2), params(3), params(4), params(5));
+        if (tr.numPts() < 2) {
+            throw TrackingFailed("Track was too short");
+        }
+
         arma::mat simPos = tr.getPositionMatrix();
         arma::vec simEn = tr.getEnergyVector();
 
@@ -200,6 +204,8 @@ namespace mcopt
     {
         const arma::uword numVars = ctr0.n_rows;
         const arma::uword numChis = 3;
+
+        assert(ctr0.n_elem == sigma0.n_elem);
 
         arma::vec mins = ctr0 - sigma0 / 2;
         if (mins(3) < 0) {
