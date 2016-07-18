@@ -89,6 +89,45 @@ namespace mcopt
         return result;
     }
 
+    arma::mat EventGenerator::diffuseElectrons(const arma::mat& tr) const
+    {
+        const double diffSigma = 0.5e-3;
+        const double centerAmpl = 0.398942 / diffSigma;
+        const double diffAmpl   = 0.241971 / diffSigma;
+        const double diffSigmaDiag = diffSigma * std::sqrt(2);
+        const arma::uword numDiffPts = 8;  // Number of diffusion points in addition to the original one
+        const arma::uword numPts = tr.n_rows;
+
+        const arma::mat diffPts {{diffSigma, 0},                     // East
+                                 {-diffSigma, 0},                    // West
+                                 {0, diffSigma},                     // North
+                                 {0, -diffSigma},                    // South
+                                 {diffSigmaDiag, diffSigmaDiag},     // Northeast
+                                 {diffSigmaDiag, -diffSigmaDiag},    // Southeast
+                                 {-diffSigmaDiag, diffSigmaDiag},    // Northwest
+                                 {-diffSigmaDiag, -diffSigmaDiag}};  // Southwest
+
+        arma::mat result (numPts * (numDiffPts + 1), tr.n_cols);
+
+        assert(diffPts.n_rows == numDiffPts);
+
+        result.rows(0, numPts-1) = tr;
+        result(arma::span(0, numPts-1), 3) *= centerAmpl;
+
+        for (int ptIdx = 0; ptIdx < numDiffPts; ptIdx++) {
+            const arma::uword firstRow = numPts * (ptIdx+1);
+
+            for (arma::uword i = 0; i < numPts; i++) {
+                const arma::uword thisRow = firstRow + i;
+                result(thisRow, arma::span(0, 1)) = tr(i, arma::span(0, 1)) + diffPts.row(ptIdx);
+                result(thisRow, 2) = tr(i, 2);
+                result(thisRow, 3) = tr(i, 3) * diffAmpl;
+            }
+        }
+
+        return result;
+    }
+
     arma::mat EventGenerator::prepareTrack(const arma::mat& pos, const arma::vec& en) const
     {
         // This creates a matrix with columns (x, y, z, numElec)
@@ -97,11 +136,13 @@ namespace mcopt
         const arma::uword ncols = 4;
         assert(en.n_rows == nrows);
 
-        arma::mat result (pos.n_rows, ncols);
+        arma::mat uncalPts (pos.n_rows, ncols);
 
         arma::mat posTilted = unTiltAndRecenter(pos, beamCtr, tilt);
-        result.cols(0, 2) = uncalibrate(posTilted, vd, clock);
-        result.col(3) = numElec(en);
+        uncalPts.cols(0, 2) = uncalibrate(posTilted, vd, clock);
+        uncalPts.col(3) = numElec(en);
+
+        arma::mat result = diffuseElectrons(uncalPts);
 
         return result;
     }
@@ -174,6 +215,10 @@ namespace mcopt
             // Find center of gravity of the peak
             arma::uvec pkPts = arma::find(sig > 0.3*sig.max());
             arma::vec pkVals = sig.elem(pkPts);
+            double total = arma::sum(pkVals);
+            if (total < 1e-3) {
+                continue;
+            }
             double pkCtrGrav = arma::dot(pkPts, pkVals) / arma::sum(pkVals);
 
             double maxVal = sig.max();
