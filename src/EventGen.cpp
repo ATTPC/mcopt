@@ -91,12 +91,7 @@ namespace mcopt
 
     arma::mat EventGenerator::diffuseElectrons(const arma::mat& tr) const
     {
-        const double centerAmpl = 0.398942 / diffSigma;
-        const double diffAmpl   = 0.241971 / diffSigma;
         const double diffSigmaDiag = diffSigma * std::sqrt(2);
-        const arma::uword numDiffPts = 8;  // Number of diffusion points in addition to the original one
-        const arma::uword numPts = tr.n_rows;
-
         const arma::mat diffPts {{diffSigma, 0},                     // East
                                  {-diffSigma, 0},                    // West
                                  {0, diffSigma},                     // North
@@ -106,9 +101,13 @@ namespace mcopt
                                  {-diffSigmaDiag, diffSigmaDiag},    // Northwest
                                  {-diffSigmaDiag, -diffSigmaDiag}};  // Southwest
 
-        arma::mat result (numPts * (numDiffPts + 1), tr.n_cols);
+        const arma::uword numDiffPts = diffPts.n_rows;  // Number of diffusion points in addition to the original one
+        const arma::uword numPts = tr.n_rows;
 
-        assert(diffPts.n_rows == numDiffPts);
+        const double centerAmpl = 0.4;
+        const double diffAmpl = (1 - centerAmpl) / numDiffPts;
+
+        arma::mat result (numPts * (numDiffPts + 1), tr.n_cols);
 
         result.rows(0, numPts-1) = tr;
         result(arma::span(0, numPts-1), 3) *= centerAmpl;
