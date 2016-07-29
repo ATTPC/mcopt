@@ -117,7 +117,7 @@ namespace mcopt
 
             for (arma::uword i = 0; i < numPts; i++) {
                 const arma::uword thisRow = firstRow + i;
-                result(thisRow, arma::span(0, 1)) = tr(i, arma::span(0, 1)) + diffPts.row(ptIdx);
+                result(thisRow, arma::span(0, 1)) = tr(i, arma::span(0, 1)) + diffPts.row(ptIdx) * std::sqrt(tr(i, 2));
                 result(thisRow, 2) = tr(i, 2);
                 result(thisRow, 3) = tr(i, 3) * diffAmpl;
             }
