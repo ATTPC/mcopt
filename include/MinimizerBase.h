@@ -20,6 +20,10 @@ namespace mcopt
         double posChi2;
         double enChi2;
         double vertChi2;
+
+        double sum() const { return posChi2 + enChi2 + vertChi2; }
+        constexpr int numChis() const { return 3; }
+        arma::rowvec asRow() const { return arma::rowvec {posChi2, enChi2, vertChi2}; }
     };
 
     class MinimizerBase
