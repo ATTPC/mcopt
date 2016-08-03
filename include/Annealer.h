@@ -2,9 +2,9 @@
 #define MCOPT_ANNEALER_H
 
 #include <armadillo>
-#include <MinimizerBase.h>
-#include <EventGen.h>
-#include <Tracker.h>
+#include "MinimizerBase.h"
+#include "EventGen.h"
+#include "Tracker.h"
 #include <vector>
 #include <random>
 #include <tuple>
@@ -32,7 +32,20 @@ namespace mcopt
 
         arma::mat ctrs;           /// The minimized set of parameters (i.e. the result)
         arma::mat chis;       /// The matrix of chi2 values. Rows are iterations, columns are chi2 variable
+
         AnnealStopReason stopReason;
+    };
+
+    struct AnnealerState
+    {
+        std::vector<arma::vec> ctrs;
+        std::vector<Chi2Set> chis;
+        double temp;
+        arma::vec sigma;
+        int numCalls = 0;
+
+        arma::mat expPos;
+        arma::vec expHits;
     };
 
     class AnnealerReachedMaxCalls : public std::exception
@@ -44,18 +57,23 @@ namespace mcopt
     class Annealer : public MinimizerBase
     {
     public:
-        Annealer(const Tracker& tracker, const EventGenerator& evtgen)
-            : MinimizerBase(tracker, evtgen), randomEngine(std::random_device()()) {}
+        Annealer(const Tracker& tracker, const EventGenerator& evtgen, const double T0, const double coolRate,
+                 const int numIters, const int maxCallsPerIter)
+            : MinimizerBase(tracker, evtgen), T0(T0), coolRate(coolRate), numIters(numIters),
+            maxCallsPerIter(maxCallsPerIter), randomEngine(std::random_device()()) {}
 
         arma::vec randomStep(const arma::vec& ctr, const arma::vec& sigma) const;
         bool solutionIsBetter(const double newChi, const double oldChi, const double T);
-        std::tuple<arma::vec, Chi2Set>
-        findNextPoint(const arma::vec& lastCtr, const double lastChi, const arma::vec& sigma, const double T,
-                      const arma::mat& expPos, const arma::vec& expHits, const int maxCallsPerIter);
+        std::tuple<arma::vec, Chi2Set> findNextPoint(const AnnealerState& state);
 
         AnnealResult minimize(const arma::vec& ctr0, const arma::vec& sigma0, const arma::mat& expPos,
-                const arma::vec& expHits, const double T0, const double coolRate,
-                const int numIters, const int maxCallsPerIter);
+                              const arma::vec& expHits);
+
+        // Annealing parameters
+        double T0;
+        double coolRate;
+        int numIters;
+        int maxCallsPerIter;
 
     private:
         std::mt19937 randomEngine;

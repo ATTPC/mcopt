@@ -6,6 +6,7 @@
 #include "PadPlane.h"
 #include "EventGen.h"
 #include "MCminimizer.h"
+#include "Annealer.h"
 #include "Gas.h"
 #include "Exceptions.h"
 

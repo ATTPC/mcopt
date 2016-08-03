@@ -4,7 +4,7 @@ namespace mcopt {
 
     arma::vec Annealer::randomStep(const arma::vec& ctr, const arma::vec& sigma) const
     {
-        return ctr + (arma::randu<arma::vec>(arma::size(sigma)) - 0.5) * sigma;
+        return ctr + (arma::randu<arma::vec>(arma::size(sigma)) - 0.5) % sigma;
     }
 
     bool Annealer::solutionIsBetter(const double newChi, const double oldChi, const double T)
@@ -24,30 +24,31 @@ namespace mcopt {
         return isBetter;
     }
 
-    std::tuple<arma::vec, Chi2Set>
-    Annealer::findNextPoint(const arma::vec& lastCtr, const double lastChi, const arma::vec& sigma, const double T,
-                            const arma::mat& expPos, const arma::vec& expHits, const int maxCallsPerIter)
+    std::tuple<arma::vec, Chi2Set> Annealer::findNextPoint(const AnnealerState& state)
     {
         arma::vec ctr;
         Chi2Set trialChis;
         bool foundGoodPoint = false;
 
+        const arma::vec& lastCtr = state.ctrs.back();
+        const double lastTotalChi = state.chis.back().sum();
+
         for (int iterCalls = 0; iterCalls < maxCallsPerIter && !foundGoodPoint; iterCalls++) {
             // Make a trial step and evaluate the objective function
-            arma::vec ctr = lastCtr + randomStep(lastCtr, sigma);
+            arma::vec ctr = lastCtr + randomStep(lastCtr, state.sigma);
 
             Chi2Set trialChis;
             try {
-                trialChis = runTrack(ctr, expPos, expHits);
+                trialChis = runTrack(ctr, state.expPos, state.expHits);
             }
             catch (const std::exception&) {
                 continue;  // Eat the exception and give up on this trial
             }
 
-            double trialTotal = trialChis.sum();
+            double trialTotalChi = trialChis.sum();
 
             // Now determine whether to keep this step
-            foundGoodPoint = solutionIsBetter(trialTotal, lastChi, T);
+            foundGoodPoint = solutionIsBetter(trialTotalChi, lastTotalChi, state.temp);
         }
 
         if (foundGoodPoint) {
@@ -59,39 +60,37 @@ namespace mcopt {
     }
 
     AnnealResult Annealer::minimize(const arma::vec& ctr0, const arma::vec& sigma0, const arma::mat& expPos,
-            const arma::vec& expHits, const double T0, const double coolRate,
-            const int numIters, const int maxCallsPerIter)
+                                    const arma::vec& expHits)
     {
-        int totNumCalls = 0;
+        AnnealerState state;
+        state.temp = T0;
+        state.sigma = sigma0;
+        state.expPos = expPos;
+        state.expHits = expHits;
 
-        std::vector<arma::vec> ctrs {ctr0};
-        std::vector<Chi2Set> chis {runTrack(ctr0, expPos, expHits)};
-        totNumCalls++;
+        state.ctrs.push_back(ctr0);
+        state.chis.push_back(runTrack(ctr0, expPos, expHits));
+        state.numCalls++;
 
         for (int iter = 0; iter < numIters; iter++) {
-            // Cool the system
-            const double redFactor = std::pow(coolRate, iter);
-            const double T = T0 * redFactor;
-            arma::vec sigma = sigma0 * redFactor;
-
-            // Results from the last iteration, for comparison
-            const arma::vec lastCtr = ctrs.back();
-            const double lastTotal = chis.back().sum();
-
             try {
                 arma::vec newCtr;
                 Chi2Set newChis;
 
-                std::tie(newCtr, newChis) = findNextPoint(lastCtr, lastTotal, sigma, T, expPos, expHits, maxCallsPerIter);
+                std::tie(newCtr, newChis) = findNextPoint(state);
 
-                ctrs.push_back(newCtr);
-                chis.push_back(newChis);
+                state.ctrs.push_back(newCtr);
+                state.chis.push_back(newChis);
             }
             catch (const AnnealerReachedMaxCalls&) {
-                return AnnealResult(ctrs, chis, AnnealStopReason::tooManyCalls);
+                return AnnealResult(state.ctrs, state.chis, AnnealStopReason::tooManyCalls);
             }
+
+            // Cool the system before the next iteration
+            state.temp *= coolRate;
+            state.sigma *= coolRate;
         }
 
-        return AnnealResult(ctrs, chis, AnnealStopReason::maxIters);
+        return AnnealResult(state.ctrs, state.chis, AnnealStopReason::maxIters);
     }
 }
