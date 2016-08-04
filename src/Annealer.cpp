@@ -4,6 +4,7 @@ namespace mcopt {
 
     arma::vec Annealer::randomStep(const arma::vec& ctr, const arma::vec& sigma) const
     {
+        assert(ctr.n_elem == sigma.n_elem);
         return ctr + (arma::randu<arma::vec>(arma::size(sigma)) - 0.5) % sigma;
     }
 
@@ -24,7 +25,7 @@ namespace mcopt {
         return isBetter;
     }
 
-    std::tuple<arma::vec, Chi2Set> Annealer::findNextPoint(const AnnealerState& state)
+    void Annealer::findNextPoint(AnnealerState& state)
     {
         arma::vec ctr;
         Chi2Set trialChis;
@@ -35,11 +36,12 @@ namespace mcopt {
 
         for (int iterCalls = 0; iterCalls < maxCallsPerIter && !foundGoodPoint; iterCalls++) {
             // Make a trial step and evaluate the objective function
-            arma::vec ctr = lastCtr + randomStep(lastCtr, state.sigma);
+            arma::vec ctr = randomStep(lastCtr, state.sigma);
 
             Chi2Set trialChis;
             try {
                 trialChis = runTrack(ctr, state.expPos, state.expHits);
+                state.numCalls++;
             }
             catch (const std::exception&) {
                 continue;  // Eat the exception and give up on this trial
@@ -52,7 +54,9 @@ namespace mcopt {
         }
 
         if (foundGoodPoint) {
-            return std::make_tuple(ctr, trialChis);
+            state.ctrs.push_back(ctr);
+            state.chis.push_back(trialChis);
+            return;
         }
         else {
             throw AnnealerReachedMaxCalls();
@@ -62,6 +66,9 @@ namespace mcopt {
     AnnealResult Annealer::minimize(const arma::vec& ctr0, const arma::vec& sigma0, const arma::mat& expPos,
                                     const arma::vec& expHits)
     {
+        assert(ctr0.n_elem > 0);
+        assert(ctr0.n_elem == sigma0.n_elem);
+
         AnnealerState state;
         state.temp = T0;
         state.sigma = sigma0;
@@ -74,16 +81,10 @@ namespace mcopt {
 
         for (int iter = 0; iter < numIters; iter++) {
             try {
-                arma::vec newCtr;
-                Chi2Set newChis;
-
-                std::tie(newCtr, newChis) = findNextPoint(state);
-
-                state.ctrs.push_back(newCtr);
-                state.chis.push_back(newChis);
+                findNextPoint(state);
             }
             catch (const AnnealerReachedMaxCalls&) {
-                return AnnealResult(state.ctrs, state.chis, AnnealStopReason::tooManyCalls);
+                return AnnealResult(state.ctrs, state.chis, AnnealStopReason::tooManyCalls, state.numCalls);
             }
 
             // Cool the system before the next iteration
@@ -91,6 +92,6 @@ namespace mcopt {
             state.sigma *= coolRate;
         }
 
-        return AnnealResult(state.ctrs, state.chis, AnnealStopReason::maxIters);
+        return AnnealResult(state.ctrs, state.chis, AnnealStopReason::maxIters, state.numCalls);
     }
 }

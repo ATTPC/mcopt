@@ -8,6 +8,7 @@
 #include <vector>
 #include <random>
 #include <tuple>
+#include <cassert>
 
 namespace mcopt
 {
@@ -18,8 +19,8 @@ namespace mcopt
     public:
         AnnealResult() = default;
         AnnealResult(const std::vector<arma::vec>& ctrs_in, const std::vector<Chi2Set>& chis_in,
-                     const AnnealStopReason& reason_in)
-            : stopReason(reason_in)
+                     const AnnealStopReason& reason_in, int numCalls_in)
+            : stopReason(reason_in), numCalls(numCalls_in)
         {
             ctrs = arma::mat(ctrs_in.size(), ctrs_in.at(0).n_elem);
             chis = arma::mat(chis_in.size(), chis_in.at(0).numChis());
@@ -34,6 +35,7 @@ namespace mcopt
         arma::mat chis;       /// The matrix of chi2 values. Rows are iterations, columns are chi2 variable
 
         AnnealStopReason stopReason;
+        int numCalls;
     };
 
     struct AnnealerState
@@ -64,7 +66,7 @@ namespace mcopt
 
         arma::vec randomStep(const arma::vec& ctr, const arma::vec& sigma) const;
         bool solutionIsBetter(const double newChi, const double oldChi, const double T);
-        std::tuple<arma::vec, Chi2Set> findNextPoint(const AnnealerState& state);
+        void findNextPoint(AnnealerState& state);
 
         AnnealResult minimize(const arma::vec& ctr0, const arma::vec& sigma0, const arma::mat& expPos,
                               const arma::vec& expHits);
