@@ -36,9 +36,8 @@ namespace mcopt {
 
         for (int iterCalls = 0; iterCalls < maxCallsPerIter && !foundGoodPoint; iterCalls++) {
             // Make a trial step and evaluate the objective function
-            arma::vec ctr = randomStep(lastCtr, state.sigma);
+            ctr = randomStep(lastCtr, state.sigma);
 
-            Chi2Set trialChis;
             try {
                 trialChis = runTrack(ctr, state.expPos, state.expHits);
                 state.numCalls++;
