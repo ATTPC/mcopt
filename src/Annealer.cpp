@@ -8,7 +8,7 @@ namespace mcopt {
         return ctr + (arma::randu<arma::vec>(arma::size(sigma)) - 0.5) % sigma;
     }
 
-    bool Annealer::solutionIsBetter(const double newChi, const double oldChi, const double T)
+    bool Annealer::solutionIsBetter(const double newChi, const double oldChi, AnnealerState& state) const
     {
         bool isBetter;
 
@@ -18,14 +18,14 @@ namespace mcopt {
         else {
             // If not, keep the solution according to some probability
             std::uniform_real_distribution<double> uniDistr(0, 1);
-            double energy = std::exp(-(newChi - oldChi) / T);
-            isBetter = energy > uniDistr(randomEngine);
+            double energy = std::exp(-(newChi - oldChi) / state.temp);
+            isBetter = energy > uniDistr(state.randomEngine);
         }
 
         return isBetter;
     }
 
-    void Annealer::findNextPoint(AnnealerState& state)
+    void Annealer::findNextPoint(AnnealerState& state) const
     {
         arma::vec ctr;
         Chi2Set trialChis;
@@ -49,7 +49,7 @@ namespace mcopt {
             double trialTotalChi = trialChis.sum();
 
             // Now determine whether to keep this step
-            foundGoodPoint = solutionIsBetter(trialTotalChi, lastTotalChi, state.temp);
+            foundGoodPoint = solutionIsBetter(trialTotalChi, lastTotalChi, state);
         }
 
         if (foundGoodPoint) {
@@ -63,7 +63,7 @@ namespace mcopt {
     }
 
     AnnealResult Annealer::minimize(const arma::vec& ctr0, const arma::vec& sigma0, const arma::mat& expPos,
-                                    const arma::vec& expHits)
+                                    const arma::vec& expHits) const
     {
         assert(ctr0.n_elem > 0);
         assert(ctr0.n_elem == sigma0.n_elem);

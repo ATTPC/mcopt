@@ -48,6 +48,8 @@ namespace mcopt
 
         arma::mat expPos;
         arma::vec expHits;
+
+        std::mt19937 randomEngine {std::random_device()()};
     };
 
     class AnnealerReachedMaxCalls : public std::exception
@@ -62,23 +64,20 @@ namespace mcopt
         Annealer(const Tracker& tracker, const EventGenerator& evtgen, const double T0, const double coolRate,
                  const int numIters, const int maxCallsPerIter)
             : MinimizerBase(tracker, evtgen), T0(T0), coolRate(coolRate), numIters(numIters),
-            maxCallsPerIter(maxCallsPerIter), randomEngine(std::random_device()()) {}
+              maxCallsPerIter(maxCallsPerIter) {}
 
         arma::vec randomStep(const arma::vec& ctr, const arma::vec& sigma) const;
-        bool solutionIsBetter(const double newChi, const double oldChi, const double T);
-        void findNextPoint(AnnealerState& state);
+        bool solutionIsBetter(const double newChi, const double oldChi, AnnealerState& state) const;
+        void findNextPoint(AnnealerState& state) const;
 
         AnnealResult minimize(const arma::vec& ctr0, const arma::vec& sigma0, const arma::mat& expPos,
-                              const arma::vec& expHits);
+                              const arma::vec& expHits) const;
 
         // Annealing parameters
         double T0;
         double coolRate;
         int numIters;
         int maxCallsPerIter;
-
-    private:
-        std::mt19937 randomEngine;
     };
 }
 
