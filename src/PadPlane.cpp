@@ -4,7 +4,7 @@ namespace mcopt {
 
     PadPlane::PadPlane(const arma::Mat<uint16_t>& lt_, const double xLB_, const double xDelta_,
                        const double yLB_, const double yDelta_, const double rotAngle_)
-    : xLowerBound(xLB_), yLowerBound(yLB_), xDelta(xDelta_), yDelta(yDelta_), lookupTable(lt_), rotAngle(rotAngle_),
+    : xLowerBound(xLB_), yLowerBound(yLB_), xDelta(xDelta_), yDelta(yDelta_), lookupTable(lt_),
       sinRotAngle(sin(rotAngle_)), cosRotAngle(cos(rotAngle_)), padCoords(generatePadCoordinates(rotAngle_))
     {
         xUpperBound = xLowerBound + lookupTable.n_cols * xDelta;
@@ -24,7 +24,7 @@ namespace mcopt {
         if (xPos < 0 || yPos < 0 || xPos >= lookupTable.n_cols || yPos >= lookupTable.n_rows) {
             return 20000;
         }
-        return lookupTable(xPos, yPos);
+        return lookupTable(static_cast<arma::uword>(xPos), static_cast<arma::uword>(yPos));
     }
 
     static inline std::vector<std::vector<double>> create_triangle(const double x_offset, const double y_offset,
@@ -82,7 +82,7 @@ namespace mcopt {
 
             double pads_in_half_row = row_length / dotted_l_tri_side;
             int pads_out_half_hex = static_cast<int>(roundToEven(2 * (pads_in_half_row - pads_in_half_hex)));
-            int pads_in_row = 2 * pads_out_half_hex + 4 * pads_in_half_hex - 1;
+            int pads_in_row = static_cast<int>(2 * pads_out_half_hex + 4 * pads_in_half_hex - 1);
 
             int ort = 1;
 

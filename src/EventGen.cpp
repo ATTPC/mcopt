@@ -112,7 +112,7 @@ namespace mcopt
         result.rows(0, numPts-1) = tr;
         result(arma::span(0, numPts-1), 3) *= centerAmpl;
 
-        for (int ptIdx = 0; ptIdx < numDiffPts; ptIdx++) {
+        for (arma::uword ptIdx = 0; ptIdx < numDiffPts; ptIdx++) {
             const arma::uword firstRow = numPts * (ptIdx+1);
 
             for (arma::uword i = 0; i < numPts; i++) {
@@ -134,7 +134,7 @@ namespace mcopt
         const arma::uword ncols = 4;
         assert(en.n_rows == nrows);
 
-        arma::mat uncalPts (pos.n_rows, ncols);
+        arma::mat uncalPts (nrows, ncols);
 
         arma::mat posTilted = unTiltAndRecenter(pos, beamCtr, tilt);
         uncalPts.cols(0, 2) = uncalibrate(posTilted, vd, clock);
@@ -186,7 +186,7 @@ namespace mcopt
         std::map<pad_t, Peak> res;
         for (const auto& pair : evt) {
             arma::uword maxTB;
-            unsigned maxVal = std::floor(pair.second.max(maxTB));  // This stores the location of the max in its argument
+            unsigned maxVal = static_cast<unsigned>(std::floor(pair.second.max(maxTB)));  // This stores the location of the max in its argument
             res.emplace(pair.first, Peak{static_cast<unsigned>(maxTB), maxVal});
         }
         return res;
@@ -278,8 +278,8 @@ namespace mcopt
         double elecPerBin = gain_ / 4096 / E_CHG;
         padThresh = (pt / 128) * discrMax * elecPerBin;
 
-        trigWidth = std::lround(trigWidth_ * writeCk);
-        multWindow = std::lround(multWindow_ / masterCk * writeCk);
+        trigWidth = static_cast<decltype(trigWidth)>(std::lround(trigWidth_ * writeCk));
+        multWindow = static_cast<decltype(multWindow)>(std::lround(multWindow_ / masterCk * writeCk));
     }
 
     arma::mat Trigger::findTriggerSignals(const std::map<pad_t, arma::vec>& event) const
@@ -307,7 +307,7 @@ namespace mcopt
                 auto cobo = padmap.reverseFind(padNum).cobo;
                 assert(cobo != padmap.missingValue);
 
-                res.row(cobo) += sig.t();
+                res.row(static_cast<arma::uword>(cobo)) += sig.t();
             }
         }
         return res;

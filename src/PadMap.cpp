@@ -81,7 +81,7 @@ namespace mcopt
             channel = stoi(element);
 
             getline(lineStream, element);
-            pad = stoi(element);
+            pad = static_cast<pad_t>(stoi(element));
 
             insert(cobo, asad, aget, channel, pad);
         }

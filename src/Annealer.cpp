@@ -1,6 +1,23 @@
 #include <Annealer.h>
 
 namespace mcopt {
+    AnnealResult::AnnealResult(const std::vector<arma::vec>& ctrs_, const std::vector<Chi2Set>& chis_,
+                               const AnnealStopReason& reason_, int numCalls_)
+        : stopReason(reason_), numCalls(numCalls_)
+    {
+        ctrs = arma::mat(ctrs_.size(), ctrs_.at(0).n_elem);
+        chis = arma::mat(chis_.size(), chis_.at(0).numChis());
+
+        for (arma::uword i = 0; i < ctrs_.size(); i++) {
+            ctrs.row(i) = ctrs_.at(i).t();
+            chis.row(i) = chis_.at(i).asRow();
+        }
+    }
+
+    double AnnealResult::getFinalChiTotal() const
+    {
+        return arma::accu(chis.tail_rows(1));
+    }
 
     arma::vec Annealer::randomStep(const arma::vec& ctr, const arma::vec& sigma) const
     {
@@ -100,7 +117,7 @@ namespace mcopt {
         std::vector<AnnealResult> results (multiMinimizeNumTrials);
 
         #pragma omp parallel for schedule(dynamic)
-        for (int trial = 0; trial < multiMinimizeNumTrials; trial++) {
+        for (size_t trial = 0; trial < multiMinimizeNumTrials; trial++) {
             results.at(trial) = minimize(ctr0, sigma0, expPos, expHits);
         }
 

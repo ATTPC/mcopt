@@ -72,6 +72,7 @@ if(HDF5_FOUND)
     target_link_libraries(test_mcopt ${HDF5_CXX_LIBRARIES})
     file(COPY "test/LUT.h5" DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 endif()
+target_compile_options(test_mcopt PUBLIC "-Wno-shadow")
 
 if(HDF5_FOUND)
     add_executable(prof_tracker EXCLUDE_FROM_ALL prof/prof_tracker.cpp prof/utils.cpp)

@@ -20,22 +20,9 @@ namespace mcopt
     public:
         AnnealResult() = default;
         AnnealResult(const std::vector<arma::vec>& ctrs_in, const std::vector<Chi2Set>& chis_in,
-                     const AnnealStopReason& reason_in, int numCalls_in)
-            : stopReason(reason_in), numCalls(numCalls_in)
-        {
-            ctrs = arma::mat(ctrs_in.size(), ctrs_in.at(0).n_elem);
-            chis = arma::mat(chis_in.size(), chis_in.at(0).numChis());
+                     const AnnealStopReason& reason_in, int numCalls_in);
 
-            for (arma::uword i = 0; i < ctrs_in.size(); i++) {
-                ctrs.row(i) = ctrs_in.at(i).t();
-                chis.row(i) = chis_in.at(i).asRow();
-            }
-        }
-
-        double getFinalChiTotal() const
-        {
-            return arma::accu(chis.tail_rows(1));
-        }
+        double getFinalChiTotal() const;
 
         arma::mat ctrs;           /// The minimized set of parameters (i.e. the result)
         arma::mat chis;       /// The matrix of chi2 values. Rows are iterations, columns are chi2 variable
@@ -87,7 +74,7 @@ namespace mcopt
         double coolRate;
         int numIters;
         int maxCallsPerIter;
-        int multiMinimizeNumTrials;
+        size_t multiMinimizeNumTrials;
     };
 }
 
