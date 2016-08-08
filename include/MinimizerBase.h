@@ -29,8 +29,8 @@ namespace mcopt
     class MinimizerBase
     {
     public:
-        MinimizerBase(const Tracker& tracker, const EventGenerator& evtgen)
-            : tracker(tracker), evtgen(evtgen) {}
+        MinimizerBase(const Tracker& tracker_, const EventGenerator& evtgen_)
+            : tracker(tracker_), evtgen(evtgen_) {}
 
         // Objective function components
         static arma::mat findPositionDeviations(const arma::mat& simPos, const arma::mat& expPos);

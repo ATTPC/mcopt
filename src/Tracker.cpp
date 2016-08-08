@@ -19,10 +19,10 @@ namespace mcopt
         return sqrt(en * (en + 2*mass_mc2)) / (en + mass_mc2);
     }
 
-    Tracker::Tracker(const unsigned massNum, const unsigned chargeNum, const Gas& gas,
-                     const arma::vec3& efield, const arma::vec3& bfield)
-        : massNum(massNum), mass_kg(massNum * P_KG), mass_mc2(massNum * P_MC2), chargeNum(chargeNum),
-          charge(chargeNum * E_CHG), gas(gas), efield(efield), bfield(bfield) {}
+    Tracker::Tracker(const unsigned massNum_, const unsigned chargeNum_, const Gas& gas_,
+                     const arma::vec3& efield_, const arma::vec3& bfield_)
+        : massNum(massNum_), mass_kg(massNum_ * P_KG), mass_mc2(massNum_ * P_MC2), chargeNum(chargeNum_),
+          charge(chargeNum_ * E_CHG), gas(gas_), efield(efield_), bfield(bfield_) {}
 
     void Tracker::updateState(State& st, const double tstep) const
     {

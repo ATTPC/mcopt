@@ -20,8 +20,8 @@ namespace mcopt
 
         State()
             : pos(arma::zeros<arma::vec>(3)), mom(arma::zeros<arma::vec>(3)), en(0), de(0) {}
-        State(const arma::vec3& pos, const arma::vec3& mom, const double en, const double de)
-            : pos(pos), mom(mom), en(en), de(de) {}
+        State(const arma::vec3& pos_, const arma::vec3& mom_, const double en_, const double de_)
+            : pos(pos_), mom(mom_), en(en_), de(de_) {}
     };
 
     class Tracker

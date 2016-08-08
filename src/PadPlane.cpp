@@ -2,10 +2,10 @@
 
 namespace mcopt {
 
-    PadPlane::PadPlane(const arma::Mat<uint16_t>& lt, const double xLB, const double xDelta,
-                       const double yLB, const double yDelta, const double rotAngle)
-    : xLowerBound(xLB), yLowerBound(yLB), xDelta(xDelta), yDelta(yDelta), lookupTable(lt), rotAngle(rotAngle),
-      sinRotAngle(sin(rotAngle)), cosRotAngle(cos(rotAngle)), padCoords(generatePadCoordinates(rotAngle))
+    PadPlane::PadPlane(const arma::Mat<uint16_t>& lt_, const double xLB_, const double xDelta_,
+                       const double yLB_, const double yDelta_, const double rotAngle_)
+    : xLowerBound(xLB_), yLowerBound(yLB_), xDelta(xDelta_), yDelta(yDelta_), lookupTable(lt_), rotAngle(rotAngle_),
+      sinRotAngle(sin(rotAngle_)), cosRotAngle(cos(rotAngle_)), padCoords(generatePadCoordinates(rotAngle_))
     {
         xUpperBound = xLowerBound + lookupTable.n_cols * xDelta;
         yUpperBound = yLowerBound + lookupTable.n_rows * yDelta;

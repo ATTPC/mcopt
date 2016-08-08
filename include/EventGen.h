@@ -45,11 +45,11 @@ namespace mcopt
     class EventGenerator
     {
     public:
-        EventGenerator(const PadPlane& pads, const arma::vec& vd, const double clock, const double shape,
-                       const unsigned massNum, const double ioniz, const double gain, const double tilt,
-                       const double diffSigma, const arma::vec& beamCtr = arma::zeros<arma::vec>(3))
-            : vd(vd), massNum(massNum), ioniz(ioniz), gain(gain), tilt(tilt), beamCtr(beamCtr), diffSigma(diffSigma),
-              pads(pads), clock(clock), shape(shape), pulseTemplate(elecPulse(1, shape, clock, 0)) {}
+        EventGenerator(const PadPlane& pads_, const arma::vec& vd_, const double clock_, const double shape_,
+                       const unsigned massNum_, const double ioniz_, const double gain_, const double tilt_,
+                       const double diffSigma_, const arma::vec& beamCtr_ = arma::zeros<arma::vec>(3))
+            : vd(vd_), massNum(massNum_), ioniz(ioniz_), gain(gain_), tilt(tilt_), beamCtr(beamCtr_), diffSigma(diffSigma_),
+              pads(pads_), clock(clock_), shape(shape_), pulseTemplate(elecPulse(1, shape, clock, 0)) {}
 
 
         arma::vec numElec(const arma::vec& en) const;

@@ -67,10 +67,10 @@ namespace mcopt
     class Annealer : public MinimizerBase
     {
     public:
-        Annealer(const Tracker& tracker, const EventGenerator& evtgen, const double T0, const double coolRate,
-                 const int numIters, const int maxCallsPerIter)
-            : MinimizerBase(tracker, evtgen), T0(T0), coolRate(coolRate), numIters(numIters),
-              maxCallsPerIter(maxCallsPerIter), multiMinimizeNumTrials(20) {}
+        Annealer(const Tracker& tracker_, const EventGenerator& evtgen_, const double T0_, const double coolRate_,
+                 const int numIters_, const int maxCallsPerIter_)
+            : MinimizerBase(tracker_, evtgen_), T0(T0_), coolRate(coolRate_), numIters(numIters_),
+              maxCallsPerIter(maxCallsPerIter_), multiMinimizeNumTrials(20) {}
 
         arma::vec randomStep(const arma::vec& ctr, const arma::vec& sigma) const;
         bool solutionIsBetter(const double newChi, const double oldChi, AnnealerState& state) const;

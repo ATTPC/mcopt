@@ -268,18 +268,18 @@ namespace mcopt
         return hits;
     }
 
-    Trigger::Trigger(const unsigned int padThreshMSB, const unsigned int padThreshLSB, const double trigWidth,
-            const unsigned long multThresh, const unsigned long multWindow, const double writeCk,
-            const double gain, const double discrFrac, const PadMap& padmap)
-        : multThresh(multThresh), writeCk(writeCk), padmap(padmap)
+    Trigger::Trigger(const unsigned int padThreshMSB_, const unsigned int padThreshLSB_, const double trigWidth_,
+            const unsigned long multThresh_, const unsigned long multWindow_, const double writeCk_,
+            const double gain_, const double discrFrac_, const PadMap& padmap_)
+        : multThresh(multThresh_), writeCk(writeCk_), padmap(padmap_)
     {
-        double pt = ((padThreshMSB << 4) + padThreshLSB);
-        double discrMax = discrFrac * 4096;  // in data ADC bins
-        double elecPerBin = gain / 4096 / E_CHG;
+        double pt = ((padThreshMSB_ << 4) + padThreshLSB_);
+        double discrMax = discrFrac_ * 4096;  // in data ADC bins
+        double elecPerBin = gain_ / 4096 / E_CHG;
         padThresh = (pt / 128) * discrMax * elecPerBin;
 
-        this->trigWidth = std::lround(trigWidth * writeCk);
-        this->multWindow = std::lround(multWindow / masterCk * writeCk);
+        trigWidth = std::lround(trigWidth_ * writeCk);
+        multWindow = std::lround(multWindow_ / masterCk * writeCk);
     }
 
     arma::mat Trigger::findTriggerSignals(const std::map<pad_t, arma::vec>& event) const
