@@ -93,4 +93,23 @@ namespace mcopt {
 
         return AnnealResult(state.ctrs, state.chis, AnnealStopReason::maxIters, state.numCalls);
     }
+
+    AnnealResult Annealer::multiMinimize(const arma::vec& ctr0, const arma::vec& sigma0, const arma::mat& expPos,
+                                         const arma::vec& expHits) const
+    {
+        std::vector<AnnealResult> results (multiMinimizeNumTrials);
+
+        #pragma omp parallel for schedule(dynamic)
+        for (int trial = 0; trial < multiMinimizeNumTrials; trial++) {
+            results.at(trial) = minimize(ctr0, sigma0, expPos, expHits);
+        }
+
+        auto comp = [](const AnnealResult& a, const AnnealResult& b) {
+            return a.getFinalChiTotal() < b.getFinalChiTotal();
+        };
+
+        auto minIter = std::min_element(results.begin(), results.end(), comp);
+
+        return *minIter;
+    }
 }

@@ -9,6 +9,7 @@
 #include <random>
 #include <tuple>
 #include <cassert>
+#include <algorithm>
 
 namespace mcopt
 {
@@ -29,6 +30,11 @@ namespace mcopt
                 ctrs.row(i) = ctrs_in.at(i).t();
                 chis.row(i) = chis_in.at(i).asRow();
             }
+        }
+
+        double getFinalChiTotal() const
+        {
+            return arma::accu(chis.tail_rows(1));
         }
 
         arma::mat ctrs;           /// The minimized set of parameters (i.e. the result)
@@ -64,7 +70,7 @@ namespace mcopt
         Annealer(const Tracker& tracker, const EventGenerator& evtgen, const double T0, const double coolRate,
                  const int numIters, const int maxCallsPerIter)
             : MinimizerBase(tracker, evtgen), T0(T0), coolRate(coolRate), numIters(numIters),
-              maxCallsPerIter(maxCallsPerIter) {}
+              maxCallsPerIter(maxCallsPerIter), multiMinimizeNumTrials(20) {}
 
         arma::vec randomStep(const arma::vec& ctr, const arma::vec& sigma) const;
         bool solutionIsBetter(const double newChi, const double oldChi, AnnealerState& state) const;
@@ -73,11 +79,15 @@ namespace mcopt
         AnnealResult minimize(const arma::vec& ctr0, const arma::vec& sigma0, const arma::mat& expPos,
                               const arma::vec& expHits) const;
 
+        AnnealResult multiMinimize(const arma::vec& ctr0, const arma::vec& sigma0, const arma::mat& expPos,
+                                   const arma::vec& expHits) const;
+
         // Annealing parameters
         double T0;
         double coolRate;
         int numIters;
         int maxCallsPerIter;
+        int multiMinimizeNumTrials;
     };
 }
 
