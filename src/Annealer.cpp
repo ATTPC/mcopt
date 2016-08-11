@@ -52,22 +52,26 @@ namespace mcopt {
         const arma::vec& lastCtr = state.ctrs.back();
         const double lastTotalChi = state.chis.back().sum();
 
-        for (int iterCalls = 0; iterCalls < maxCallsPerIter && !foundGoodPoint; iterCalls++) {
-            // Make a trial step and evaluate the objective function
-            ctr = randomStep(lastCtr, state.sigma);
+        const size_t numThreads = static_cast<size_t>(omp_get_max_threads());
 
-            try {
-                trialChis = runTrack(ctr, state.expPos, state.expHits);
-                state.numCalls++;
-            }
-            catch (const std::exception&) {
-                continue;  // Eat the exception and give up on this trial
+        for (int iterCalls = 0; iterCalls < maxCallsPerIter && !foundGoodPoint; iterCalls += numThreads) {
+            arma::mat potentialCtrs (numThreads, lastCtr.n_elem);
+            for (arma::uword i = 0; i < potentialCtrs.n_rows; i++) {
+                potentialCtrs.row(i) = randomStep(lastCtr, state.sigma).t();
             }
 
-            double trialTotalChi = trialChis.sum();
+            arma::mat potentialChis = runTracks(potentialCtrs, state.expPos, state.expHits);
+            state.numCalls += numThreads;
 
-            // Now determine whether to keep this step
-            foundGoodPoint = solutionIsBetter(trialTotalChi, lastTotalChi, state);
+            for (arma::uword i = 0; i < potentialChis.n_rows; i++) {
+                double rowTotalChi = arma::accu(potentialChis.row(i));
+                if (solutionIsBetter(rowTotalChi, lastTotalChi, state)) {
+                    foundGoodPoint = true;
+                    ctr = potentialCtrs.row(i).t();
+                    trialChis = Chi2Set {potentialChis(i, 0), potentialChis(i, 1), potentialChis(i, 2)};
+                    break;
+                }
+            }
         }
 
         if (foundGoodPoint) {

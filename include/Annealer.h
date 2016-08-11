@@ -10,6 +10,7 @@
 #include <tuple>
 #include <cassert>
 #include <algorithm>
+#include <omp.h>
 
 namespace mcopt
 {
