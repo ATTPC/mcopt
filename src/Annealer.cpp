@@ -22,7 +22,8 @@ namespace mcopt {
     arma::vec Annealer::randomStep(const arma::vec& ctr, const arma::vec& sigma) const
     {
         assert(ctr.n_elem == sigma.n_elem);
-        return ctr + (arma::randu<arma::vec>(arma::size(sigma)) - 0.5) % sigma;
+        // return ctr + (arma::randu<arma::vec>(arma::size(sigma)) - 0.5) % sigma;
+        return ctr + (arma::randn<arma::vec>(arma::size(sigma)) % sigma);
     }
 
     bool Annealer::solutionIsBetter(const double newChi, const double oldChi, AnnealerState& state) const
@@ -105,7 +106,7 @@ namespace mcopt {
 
             // Cool the system before the next iteration
             state.temp *= coolRate;
-            state.sigma *= coolRate;
+            // state.sigma *= coolRate;
         }
 
         return AnnealResult(state.ctrs, state.chis, AnnealStopReason::maxIters, state.numCalls);
@@ -116,7 +117,7 @@ namespace mcopt {
     {
         std::vector<AnnealResult> results (multiMinimizeNumTrials);
 
-        #pragma omp parallel for schedule(dynamic)
+        #pragma omp parallel for schedule(static, 1)
         for (size_t trial = 0; trial < multiMinimizeNumTrials; trial++) {
             results.at(trial) = minimize(ctr0, sigma0, expPos, expHits);
         }
