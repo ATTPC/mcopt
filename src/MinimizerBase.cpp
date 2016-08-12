@@ -43,7 +43,7 @@ namespace mcopt
         return res;
     }
 
-    arma::mat MinimizerBase::findPositionDeviations(const arma::mat& simPos, const arma::mat& expPos)
+    arma::mat MinimizerBase::findPositionDeviations(const arma::mat& simPos, const arma::mat& expPos) const
     {
         // ASSUMPTION: matrices must be sorted in increasing Z order.
         // Assume also that the matrices are structured as:
@@ -56,70 +56,51 @@ namespace mcopt
         arma::interp1(simPos.col(2), simPos.col(1), expPos.col(2), yInterp);
 
         arma::mat result (xInterp.n_rows, 2);
-        result.col(0) = (xInterp - expPos.col(0)) / 0.5e-2;
-        result.col(1) = (yInterp - expPos.col(1)) / 0.5e-2;
+        result.col(0) = (xInterp - expPos.col(0)) / posChi2Norm;
+        result.col(1) = (yInterp - expPos.col(1)) / posChi2Norm;
 
         return result;
     }
 
-    arma::vec MinimizerBase::findEnergyDeviation(const arma::mat& simPos, const arma::vec& simEn,
-                                               const arma::vec& expMesh) const
-    {
-        arma::vec simMesh = evtgen.makeMeshSignal(simPos, simEn);
-        double sigma = expMesh.max() * 0.10;
-        return (simMesh - expMesh) / sigma;
-    }
-
     arma::vec MinimizerBase::findHitPatternDeviation(const arma::mat& simPos, const arma::vec& simEn,
-                                                   const arma::vec& expHits) const
+                                                     const arma::vec& expHits) const
     {
         arma::vec simHits = evtgen.makeHitPattern(simPos, simEn);
-        double sigma = expHits.max() * 0.10;
+        double sigma = expHits.max() * enChi2NormFraction;
         return (simHits - expHits) / sigma;
     }
 
-    double MinimizerBase::findTotalSignalChi(const std::map<pad_t, arma::vec>& simEvt,
-                                           const std::map<pad_t, arma::vec>& expEvt) const
+    double MinimizerBase::findPosChi2(const arma::mat& simPos, const arma::mat& expPos) const
     {
-        auto simIter = simEvt.cbegin();
-        auto expIter = expEvt.cbegin();
-
-        // Merging operation is (sim - exp)^2 for each TB
-
-        double accum = 0;
-
-        while (simIter != simEvt.cend() && expIter != expEvt.cend()) {
-            if (simIter->first < expIter->first) {
-                // This trace is only in the sim track
-                accum += arma::sum(arma::square(simIter->second));
-                simIter++;
-            }
-            else if (expIter->first < simIter->first) {
-                // This trace is only in the exp track
-                accum += arma::sum(arma::square(expIter->second));
-                expIter++;
-            }
-            else {
-                // This trace is in both tracks
-                accum += arma::sum(arma::square(simIter->second - expIter->second));
-                simIter++;
-                expIter++;
-            }
+        double posChi2 = 0;
+        arma::mat posDevs = findPositionDeviations(simPos, expPos);
+        if (!posDevs.is_empty()) {
+            double clampMax = 100.0;
+            arma::vec validPosDevs = replaceNaNs(arma::sum(arma::square(posDevs), 1), clampMax);
+            posChi2 = arma::sum(arma::clamp(validPosDevs, 0, clampMax)) / validPosDevs.n_elem;
         }
-        // Clean up any traces remaining in the other map after one map reaches the end
-        for (; simIter != simEvt.cend(); simIter++) {
-            accum += arma::sum(arma::square(simIter->second));
-        }
-        for (; expIter != expEvt.cend(); expIter++) {
-            accum += arma::sum(arma::square(expIter->second));
+        else {
+            posChi2 = 200;
         }
 
-        return accum;
+        return posChi2;
     }
 
-    double MinimizerBase::findVertexDeviationFromOrigin(const double x0, const double y0) const
+    double MinimizerBase::findEnChi2(const arma::mat& simPos, const arma::vec& simEn, const arma::vec& expHits) const
     {
-        return (x0*x0 + y0*y0) / 0.5e-4;
+        double enChi2 = 0;
+
+        arma::vec enDevs = findHitPatternDeviation(simPos, simEn, expHits);
+        arma::vec validEnDevs = dropNaNs(arma::square(enDevs));
+        arma::uvec nonzeroLocs = arma::find(expHits > 0);
+        enChi2 = arma::sum(arma::clamp(validEnDevs(nonzeroLocs), 0, 100)) / nonzeroLocs.n_elem;
+
+        return enChi2;
+    }
+
+    double MinimizerBase::findVertChi2(const double x0, const double y0) const
+    {
+        return (x0*x0 + y0*y0) / vertChi2Norm;
     }
 
     Chi2Set MinimizerBase::runTrack(const arma::vec& params, const arma::mat& expPos,
@@ -133,28 +114,19 @@ namespace mcopt
         arma::mat simPos = tr.getPositionMatrix();
         arma::vec simEn = tr.getEnergyVector();
 
-        double posChi2 = 0;
-        double enChi2 = 0;
-        double vertChi2 = 0;
+        Chi2Set chis;
 
-        arma::mat posDevs = findPositionDeviations(simPos, expPos);
-        if (!posDevs.is_empty()) {
-            double clampMax = 100.0;
-            arma::vec validPosDevs = replaceNaNs(arma::sum(arma::square(posDevs), 1), clampMax);
-            posChi2 = arma::sum(arma::clamp(validPosDevs, 0, clampMax)) / validPosDevs.n_elem;
+        if (posChi2Enabled) {
+            chis.posChi2 = findPosChi2(simPos, expPos);
         }
-        else {
-            posChi2 = 200;
+        if (enChi2Enabled) {
+            chis.enChi2 = findEnChi2(simPos, simEn, expHits);
+        }
+        if (vertChi2Enabled) {
+            chis.vertChi2 = findVertChi2(params(0), params(1));
         }
 
-        arma::vec enDevs = findHitPatternDeviation(simPos, simEn, expHits);
-        arma::vec validEnDevs = dropNaNs(arma::square(enDevs));
-        arma::uvec nonzeroLocs = arma::find(expHits > 0);
-        enChi2 = arma::sum(arma::clamp(validEnDevs(nonzeroLocs), 0, 100)) / nonzeroLocs.n_elem;
-
-        vertChi2 = findVertexDeviationFromOrigin(params(0), params(1));
-
-        return Chi2Set {posChi2, enChi2, vertChi2};
+        return chis;
     }
 
     arma::mat MinimizerBase::runTracks(const arma::mat& params, const arma::mat& expPos, const arma::vec& expHits) const
