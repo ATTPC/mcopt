@@ -26,7 +26,7 @@ namespace mcopt {
         return ctr + (arma::randn<arma::vec>(arma::size(sigma)) % sigma);
     }
 
-    bool Annealer::solutionIsBetter(const double newChi, const double oldChi, AnnealerState& state) const
+    bool Annealer::solutionIsBetter(const double newChi, const double oldChi, const double T) const
     {
         bool isBetter;
 
@@ -35,53 +35,61 @@ namespace mcopt {
         }
         else {
             // If not, keep the solution according to some probability
+            static std::mt19937 randomEngine {std::random_device()()};
+            #pragma omp threadprivate(randomEngine)
+
             std::uniform_real_distribution<double> uniDistr(0, 1);
-            double energy = std::exp(-(newChi - oldChi) / state.temp);
-            isBetter = energy > uniDistr(state.randomEngine);
+            double energy = std::exp(-(newChi - oldChi) / T);
+            isBetter = energy > uniDistr(randomEngine);
         }
 
         return isBetter;
     }
 
-    void Annealer::findNextPoint(AnnealerState& state) const
+    struct Trial
     {
         arma::vec ctr;
-        Chi2Set trialChis;
-        bool foundGoodPoint = false;
+        Chi2Set chi;
+        bool hadError = false;
 
+        bool operator<(const Trial& other) const { return !hadError && chi.sum() < other.chi.sum(); }
+    };
+
+    void Annealer::findNextPoint(AnnealerState& state) const
+    {
         const arma::vec& lastCtr = state.ctrs.back();
         const double lastTotalChi = state.chis.back().sum();
 
         const size_t numThreads = static_cast<size_t>(omp_get_max_threads());
 
-        for (int iterCalls = 0; iterCalls < maxCallsPerIter && !foundGoodPoint; iterCalls += numThreads) {
-            arma::mat potentialCtrs (numThreads, lastCtr.n_elem);
-            for (arma::uword i = 0; i < potentialCtrs.n_rows; i++) {
-                potentialCtrs.row(i) = randomStep(lastCtr, state.sigma).t();
-            }
+        for (int iterCalls = 0; iterCalls < maxCallsPerIter; iterCalls += numThreads) {
+            std::vector<Trial> trials (numThreads);
 
-            arma::mat potentialChis = runTracks(potentialCtrs, state.expPos, state.expHits);
-            state.numCalls += numThreads;
-
-            for (arma::uword i = 0; i < potentialChis.n_rows; i++) {
-                double rowTotalChi = arma::accu(potentialChis.row(i));
-                if (solutionIsBetter(rowTotalChi, lastTotalChi, state)) {
-                    foundGoodPoint = true;
-                    ctr = potentialCtrs.row(i).t();
-                    trialChis = Chi2Set {potentialChis(i, 0), potentialChis(i, 1), potentialChis(i, 2)};
-                    break;
+            #pragma omp parallel
+            {
+                const size_t thnum = static_cast<size_t>(omp_get_thread_num());
+                Trial& thTrial = trials.at(thnum);
+                thTrial.ctr = randomStep(lastCtr, state.sigma);
+                try {
+                    thTrial.chi = runTrack(thTrial.ctr, state.expPos, state.expHits);
+                }
+                catch (const std::exception&) {
+                    thTrial.hadError = true;
                 }
             }
+
+            state.numCalls += numThreads;
+
+            auto bestTrialIter = std::min_element(trials.begin(), trials.end());
+            if (solutionIsBetter(bestTrialIter->chi.sum(), lastTotalChi, state.temp)) {
+                state.ctrs.push_back(bestTrialIter->ctr);
+                state.chis.push_back(bestTrialIter->chi);
+                return;
+            }
         }
 
-        if (foundGoodPoint) {
-            state.ctrs.push_back(ctr);
-            state.chis.push_back(trialChis);
-            return;
-        }
-        else {
-            throw AnnealerReachedMaxCalls();
-        }
+        // If we reach this point, we didn't find a good solution, so fail
+        throw AnnealerReachedMaxCalls();
     }
 
     AnnealResult Annealer::minimize(const arma::vec& ctr0, const arma::vec& sigma0, const arma::mat& expPos,

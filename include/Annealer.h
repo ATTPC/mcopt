@@ -42,8 +42,6 @@ namespace mcopt
 
         arma::mat expPos;
         arma::vec expHits;
-
-        std::mt19937 randomEngine {std::random_device()()};
     };
 
     class AnnealerReachedMaxCalls : public std::exception
@@ -61,7 +59,7 @@ namespace mcopt
               maxCallsPerIter(maxCallsPerIter_), multiMinimizeNumTrials(20) {}
 
         arma::vec randomStep(const arma::vec& ctr, const arma::vec& sigma) const;
-        bool solutionIsBetter(const double newChi, const double oldChi, AnnealerState& state) const;
+        bool solutionIsBetter(const double newChi, const double oldChi, const double T) const;
         void findNextPoint(AnnealerState& state) const;
 
         AnnealResult minimize(const arma::vec& ctr0, const arma::vec& sigma0, const arma::mat& expPos,
