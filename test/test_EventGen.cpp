@@ -1,5 +1,6 @@
 #include "catch.hpp"
 #include "EventGen.h"
+#include "Trigger.h"
 #include <armadillo>
 
 TEST_CASE("Calibration and uncalibration work", "[eventGenerator]")

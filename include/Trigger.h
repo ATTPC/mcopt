@@ -5,7 +5,6 @@
 #include <map>
 #include <cassert>
 #include "Constants.h"
-#include "FitConfig.h"
 #include "PadMap.h"
 
 namespace mcopt {
