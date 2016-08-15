@@ -38,8 +38,12 @@ namespace mcopt
 
         unsigned int getMassNum() const { return massNum; }
         unsigned int getChargeNum() const { return chargeNum; }
+
         arma::vec3 getEfield() const { return efield; }
+        void setEfield(const arma::vec3& ef) { efield = ef; }
+
         arma::vec3 getBfield() const { return bfield; }
+        void setBfield(const arma::vec3& bf) { bfield = bf; }
 
     private:
         void updateState(State& st, const double tstep) const;
