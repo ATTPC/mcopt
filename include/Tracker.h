@@ -27,8 +27,11 @@ namespace mcopt
     class Tracker
     {
     public:
-        Tracker(const unsigned massNum, const unsigned chargeNum, const Gas& gas,
-                const arma::vec3& efield, const arma::vec3& bfield);
+        Tracker(const unsigned massNum_, const unsigned chargeNum_, const Gas* gas_,
+                const arma::vec3& efield_, const arma::vec3& bfield_)
+            : massNum(massNum_), mass_kg(massNum_ * Constants::P_KG), mass_mc2(massNum_ * Constants::P_MC2),
+              chargeNum(chargeNum_), charge(chargeNum_ * Constants::E_CHG), gas(gas_),
+              efield(efield_), bfield(bfield_) {}
 
         Track trackParticle(const double x0, const double y0, const double z0,
                             const double enu0,  const double azi0, const double pol0) const;
@@ -38,8 +41,6 @@ namespace mcopt
         arma::vec3 getEfield() const { return efield; }
         arma::vec3 getBfield() const { return bfield; }
 
-        const Gas& getGas() const { return gas; }
-
     private:
         void updateState(State& st, const double tstep) const;
 
@@ -48,7 +49,7 @@ namespace mcopt
         double mass_mc2;
         unsigned int chargeNum;
         double charge;
-        Gas gas;
+        const Gas* const gas;
         arma::vec3 efield;
         arma::vec3 bfield;
     };

@@ -158,7 +158,7 @@ namespace mcopt
         std::map<pad_t, arma::vec> result;
 
         for (arma::uword i = 0; i < uncal.n_rows - 1; i++) {
-            pad_t pad = pads.getPadNumberFromCoordinates(uncal(i, 0), uncal(i, 1));
+            pad_t pad = pads->getPadNumberFromCoordinates(uncal(i, 0), uncal(i, 1));
             if (pad != 20000) {
                 arma::vec& padSignal = result[pad];
                 if (padSignal.is_empty()) {
@@ -218,7 +218,7 @@ namespace mcopt
             double pkCtrGrav = arma::dot(pkPts, pkVals) / arma::sum(pkVals);
 
             double maxVal = sig.max();
-            auto xy = pads.getPadCenter(padNum);
+            auto xy = pads->getPadCenter(padNum);
             rows.push_back(arma::rowvec{xy.at(0), xy.at(1), (pkCtrGrav - offset), maxVal,
                                         static_cast<double>(padNum)});
         }
@@ -257,7 +257,7 @@ namespace mcopt
         arma::vec hits (10240, arma::fill::zeros);
 
         for (arma::uword i = 0; i < uncal.n_rows - 1; i++) {
-            pad_t pad = pads.getPadNumberFromCoordinates(uncal(i, 0), uncal(i, 1));
+            pad_t pad = pads->getPadNumberFromCoordinates(uncal(i, 0), uncal(i, 1));
             if (pad != 20000) {
                 hits(pad) += gain * uncal(i, 3);
             }

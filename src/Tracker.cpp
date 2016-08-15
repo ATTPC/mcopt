@@ -19,11 +19,6 @@ namespace mcopt
         return sqrt(en * (en + 2*mass_mc2)) / (en + mass_mc2);
     }
 
-    Tracker::Tracker(const unsigned massNum_, const unsigned chargeNum_, const Gas& gas_,
-                     const arma::vec3& efield_, const arma::vec3& bfield_)
-        : massNum(massNum_), mass_kg(massNum_ * P_KG), mass_mc2(massNum_ * P_MC2), chargeNum(chargeNum_),
-          charge(chargeNum_ * E_CHG), gas(gas_), efield(efield_), bfield(bfield_) {}
-
     void Tracker::updateState(State& st, const double tstep) const
     {
         arma::vec3 mom_si = st.mom * 1e6 * E_CHG / C_LGT;
@@ -50,7 +45,7 @@ namespace mcopt
         arma::vec3 new_vel = new_mom_si * invgamma / mass_kg;
         arma::vec3 new_pos = st.pos + vel * tstep;
 
-        double stopping = gas.energyLoss(st.en);
+        double stopping = gas->energyLoss(st.en);
 
         double dpos = tstep * beta * C_LGT;
         double de = threshold(stopping*dpos, 0);

@@ -53,7 +53,7 @@ namespace mcopt
     class Annealer : public MinimizerBase
     {
     public:
-        Annealer(const Tracker& tracker_, const EventGenerator& evtgen_, const double T0_, const double coolRate_,
+        Annealer(const Tracker* tracker_, const EventGenerator* evtgen_, const double T0_, const double coolRate_,
                  const int numIters_, const int maxCallsPerIter_)
             : MinimizerBase(tracker_, evtgen_), T0(T0_), coolRate(coolRate_), numIters(numIters_),
               maxCallsPerIter(maxCallsPerIter_), multiMinimizeNumTrials(20) {}

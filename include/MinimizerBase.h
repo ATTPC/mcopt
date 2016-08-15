@@ -29,7 +29,7 @@ namespace mcopt
     class MinimizerBase
     {
     public:
-        MinimizerBase(const Tracker& tracker_, const EventGenerator& evtgen_)
+        MinimizerBase(const Tracker* tracker_, const EventGenerator* evtgen_)
             : tracker(tracker_), evtgen(evtgen_) {}
 
         // Functions to calculate deviations for chi2 components
@@ -57,8 +57,8 @@ namespace mcopt
         double vertChi2Norm = 0.5e-4;
 
     private:
-        Tracker tracker;
-        EventGenerator evtgen;
+        const Tracker* const tracker;
+        const EventGenerator* const evtgen;
     };
 }
 

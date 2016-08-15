@@ -45,7 +45,7 @@ namespace mcopt
     class EventGenerator
     {
     public:
-        EventGenerator(const PadPlane& pads_, const arma::vec& vd_, const double clock_, const double shape_,
+        EventGenerator(const PadPlane* pads_, const arma::vec& vd_, const double clock_, const double shape_,
                        const unsigned massNum_, const double ioniz_, const double gain_, const double tilt_,
                        const double diffSigma_, const arma::vec& beamCtr_ = arma::zeros<arma::vec>(3))
             : vd(vd_), massNum(massNum_), ioniz(ioniz_), gain(gain_), tilt(tilt_), beamCtr(beamCtr_), diffSigma(diffSigma_),
@@ -78,7 +78,7 @@ namespace mcopt
         double diffSigma;
 
     private:
-        const PadPlane pads;
+        const PadPlane* const pads;
         double clock;
         double shape;
         arma::vec pulseTemplate;  // Precalculated GET electronics pulse. Speeds up inner loop.

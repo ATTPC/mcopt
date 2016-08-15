@@ -29,7 +29,7 @@ namespace mcopt
     class MCminimizer : public MinimizerBase
     {
     public:
-        MCminimizer(const Tracker& tracker, const EventGenerator& evtgen)
+        MCminimizer(const Tracker* tracker, const EventGenerator* evtgen)
             : MinimizerBase(tracker, evtgen) {}
 
         static arma::mat makeParams(const arma::vec& ctr, const arma::vec& sigma, const unsigned numSets,

@@ -65,7 +65,7 @@ namespace mcopt
     arma::vec MinimizerBase::findHitPatternDeviation(const arma::mat& simPos, const arma::vec& simEn,
                                                      const arma::vec& expHits) const
     {
-        arma::vec simHits = evtgen.makeHitPattern(simPos, simEn);
+        arma::vec simHits = evtgen->makeHitPattern(simPos, simEn);
         double sigma = expHits.max() * enChi2NormFraction;
         return (simHits - expHits) / sigma;
     }
@@ -106,7 +106,7 @@ namespace mcopt
     Chi2Set MinimizerBase::runTrack(const arma::vec& params, const arma::mat& expPos,
                                                      const arma::vec& expHits) const
     {
-        Track tr = tracker.trackParticle(params(0), params(1), params(2), params(3), params(4), params(5));
+        Track tr = tracker->trackParticle(params(0), params(1), params(2), params(3), params(4), params(5));
         if (tr.numPts() < 2) {
             throw TrackingFailed("Track was too short");
         }

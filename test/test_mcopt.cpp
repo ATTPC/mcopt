@@ -22,14 +22,14 @@ TEST_CASE("Calculated deviations are correct", "[deviations]")
     double diffSigma = 0.5e-3;
 
     mcopt::Gas gas (eloss, enVsZ);
-    mcopt::Tracker tracker (massNum, chargeNum, gas, efield, bfield);
+    mcopt::Tracker tracker (massNum, chargeNum, &gas, efield, bfield);
 
     arma::Mat<mcopt::pad_t> mockLUT =
         arma::conv_to<arma::Mat<mcopt::pad_t>>::from(arma::round(arma::randu<arma::mat>(5600, 5600) * 10000));
     mcopt::PadPlane pads (mockLUT, -0.280, 0.0001, -0.280, 0.0001, 0);
-    mcopt::EventGenerator evtgen (pads, vd, clock, shape, massNum, ioniz, gain, tilt, diffSigma);
+    mcopt::EventGenerator evtgen (&pads, vd, clock, shape, massNum, ioniz, gain, tilt, diffSigma);
 
-    mcopt::MCminimizer minimizer (tracker, evtgen);
+    mcopt::MCminimizer minimizer (&tracker, &evtgen);
 
     arma::mat A (20, 4);
 
@@ -108,16 +108,16 @@ TEST_CASE("Minimizer works", "[minimizer]")
     arma::vec sigma = {0, 0, 0.001, 0.5, 0.2, 0.2, 0.1};
 
     mcopt::Gas gas (eloss, enVsZ);
-    mcopt::Tracker tracker (massNum, chargeNum, gas, efield, bfield);
+    mcopt::Tracker tracker (massNum, chargeNum, &gas, efield, bfield);
 
     arma::Mat<mcopt::pad_t> mockLUT =
         arma::conv_to<arma::Mat<mcopt::pad_t>>::from(arma::round(arma::randu<arma::mat>(5600, 5600) * 10000));
     mcopt::PadPlane pads (mockLUT, -0.280, 0.0001, -0.280, 0.0001, 0);
-    mcopt::EventGenerator evtgen (pads, vd, clock, shape, massNum, ioniz, gain, tilt, diffSigma);
+    mcopt::EventGenerator evtgen (&pads, vd, clock, shape, massNum, ioniz, gain, tilt, diffSigma);
 
     SECTION("Minimizer doesn't throw")
     {
-        mcopt::MCminimizer minimizer (tracker, evtgen);
+        mcopt::MCminimizer minimizer (&tracker, &evtgen);
 
         REQUIRE_NOTHROW(
             minimizer.minimize(ctr0, sigma, expPos, expMesh, 2, 50, 0.8);
@@ -128,8 +128,8 @@ TEST_CASE("Minimizer works", "[minimizer]")
     {
         eloss = arma::conv_to<std::vector<double>>::from(arma::randu<arma::vec>(100));
         mcopt::Gas gas (eloss, enVsZ);
-        mcopt::Tracker tracker (massNum, chargeNum, gas, efield, bfield);
-        mcopt::MCminimizer minimizer (tracker, evtgen);
+        mcopt::Tracker tracker (massNum, chargeNum, &gas, efield, bfield);
+        mcopt::MCminimizer minimizer (&tracker, &evtgen);
 
         ctr0(3) = 10;  // raise the energy
 
