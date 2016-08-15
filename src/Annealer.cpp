@@ -118,7 +118,7 @@ namespace mcopt {
 
             // Cool the system before the next iteration
             state.temp *= coolRate;
-            // state.sigma *= coolRate;
+            state.sigma *= coolRate;
         }
 
         return AnnealResult(state.ctrs, state.chis, AnnealStopReason::maxIters, state.numCalls);

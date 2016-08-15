@@ -5,6 +5,7 @@
 #include "Tracker.h"
 #include "PadPlane.h"
 #include "EventGen.h"
+#include "Trigger.h"
 #include "MCminimizer.h"
 #include "Annealer.h"
 #include "Gas.h"
