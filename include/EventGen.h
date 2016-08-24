@@ -18,7 +18,7 @@ namespace mcopt
     arma::mat uncalibrate(const Track& tr, const arma::vec& vd, const double clock, const int offset=0);
     arma::mat uncalibrate(const arma::mat& pos, const arma::vec& vd, const double clock, const int offset=0);
 
-    arma::mat unTiltAndRecenter(const arma::mat& pos, const arma::vec& beamCtr, const double tilt);
+    arma::mat unTiltAndRecenter(const arma::mat& pos, const double tilt);
 
     arma::vec squareWave(const arma::uword size, const arma::uword leftEdge,
                          const arma::uword width, const double height);
@@ -47,9 +47,9 @@ namespace mcopt
     public:
         EventGenerator(const PadPlane* pads_, const arma::vec& vd_, const double clock_, const double shape_,
                        const unsigned massNum_, const double ioniz_, const double gain_, const double tilt_,
-                       const double diffSigma_, const arma::vec& beamCtr_ = arma::zeros<arma::vec>(3))
-            : vd(vd_), massNum(massNum_), ioniz(ioniz_), gain(gain_), tilt(tilt_), beamCtr(beamCtr_), diffSigma(diffSigma_),
-              pads(pads_), clock(clock_), shape(shape_), pulseTemplate(elecPulse(1, shape, clock, 0)) {}
+                       const double diffSigma_)
+            : vd(vd_), massNum(massNum_), ioniz(ioniz_), gain(gain_), tilt(tilt_), diffSigma(diffSigma_), pads(pads_),
+              clock(clock_), shape(shape_), pulseTemplate(elecPulse(1, shape, clock, 0)) {}
 
 
         arma::vec numElec(const arma::vec& en) const;
@@ -74,7 +74,6 @@ namespace mcopt
         double ioniz;
         double gain;
         double tilt;
-        arma::vec3 beamCtr;
         double diffSigma;
 
     private:

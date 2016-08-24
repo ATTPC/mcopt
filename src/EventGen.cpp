@@ -34,19 +34,14 @@ namespace mcopt
         return result;
     }
 
-    arma::mat unTiltAndRecenter(const arma::mat& pos, const arma::vec& beamCtr, const double tilt)
+    arma::mat unTiltAndRecenter(const arma::mat& pos, const double tilt)
     {
-        arma::mat res (arma::size(pos));
-        res.col(0) = pos.col(0) + beamCtr(0);
-        res.col(1) = pos.col(1) + beamCtr(1);
-        res.col(2) = pos.col(2);
-
         arma::mat tmat {{1, 0, 0},
                         {0, cos(-tilt), -sin(-tilt)},
                         {0, sin(-tilt), cos(-tilt)}};
 
-        res = (tmat * res.t()).t();
-        res.col(2) += beamCtr(2);
+        arma::mat res = (tmat * pos.t()).t();
+        res.col(1) -= tan(tilt);  // Offset after rotation is tan(tilt) * (1.0 m) b/c we rotated about micromegas
         return res;
     }
 
@@ -134,7 +129,7 @@ namespace mcopt
 
         arma::mat uncalPts (nrows, ncols);
 
-        arma::mat posTilted = unTiltAndRecenter(pos, beamCtr, tilt);
+        arma::mat posTilted = unTiltAndRecenter(pos, tilt);
         uncalPts.cols(0, 2) = uncalibrate(posTilted, vd, clock);
         uncalPts.col(3) = numElec(en);
 
