@@ -36,7 +36,6 @@ namespace mcopt {
         else {
             // If not, keep the solution according to some probability
             static std::mt19937 randomEngine {std::random_device()()};
-            #pragma omp threadprivate(randomEngine)
 
             std::uniform_real_distribution<double> uniDistr(0, 1);
             double energy = std::exp(-(newChi - oldChi) / T);
