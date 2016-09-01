@@ -196,8 +196,6 @@ namespace mcopt
     {
         std::map<pad_t, arma::vec> evt = makeEvent(pos, en);
 
-        const double offset = 1.31667 * shape * clock;  // Shaping time shifts the peak toward higher TBs
-
         std::vector<arma::rowvec> rows;
         for (const auto& pair : evt) {
             const auto& padNum = pair.first;
@@ -214,7 +212,7 @@ namespace mcopt
 
             double maxVal = sig.max();
             auto xy = pads->getPadCenter(padNum);
-            rows.push_back(arma::rowvec{xy.at(0), xy.at(1), (pkCtrGrav - offset), maxVal,
+            rows.push_back(arma::rowvec{xy.at(0), xy.at(1), pkCtrGrav, maxVal,
                                         static_cast<double>(padNum)});
         }
 
