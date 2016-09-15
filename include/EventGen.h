@@ -10,6 +10,7 @@
 #include "Track.h"
 #include "PadPlane.h"
 #include "PadMap.h"
+#include "Constants.h"
 
 namespace mcopt
 {
@@ -46,10 +47,11 @@ namespace mcopt
     {
     public:
         EventGenerator(const PadPlane* pads_, const arma::vec& vd_, const double clock_, const double shape_,
-                       const unsigned massNum_, const double ioniz_, const double gain_, const double tilt_,
-                       const double diffSigma_)
-            : vd(vd_), massNum(massNum_), ioniz(ioniz_), gain(gain_), tilt(tilt_), diffSigma(diffSigma_), pads(pads_),
-              clock(clock_), shape(shape_), pulseTemplate(elecPulse(1, shape, clock, 0)) {}
+                       const unsigned massNum_, const double ioniz_, const double micromegasGain_,
+                       const double electronicsGain_, const double tilt_, const double diffSigma_)
+            : vd(vd_), massNum(massNum_), ioniz(ioniz_), micromegasGain(micromegasGain_),
+              electronicsGain(electronicsGain_), tilt(tilt_), diffSigma(diffSigma_),
+              clock(clock_), shape(shape_), pads(pads_) {}
 
 
         arma::vec numElec(const arma::vec& en) const;
@@ -64,23 +66,21 @@ namespace mcopt
         arma::vec makeMeshSignal(const arma::mat& pos, const arma::vec& en) const;
         arma::vec makeHitPattern(const arma::mat& pos, const arma::vec& en) const;
 
-        double getClock() const { return clock; }
-        void setClock(const double c) { clock = c; pulseTemplate = elecPulse(1, shape, clock, 0); }
-        double getShape() const { return shape; }
-        void setShape(const double s) { shape = s; pulseTemplate = elecPulse(1, shape, clock, 0); }
+        inline double conversionFactor() const;
 
         arma::vec vd;
         unsigned massNum;
         double ioniz;
-        double gain;
+        double micromegasGain;
+        double electronicsGain;
         double tilt;
         double diffSigma;
+        double clock;
+        double shape;
 
     private:
         const PadPlane* const pads;
-        double clock;
-        double shape;
-        arma::vec pulseTemplate;  // Precalculated GET electronics pulse. Speeds up inner loop.
+
     };
 }
 

@@ -138,6 +138,16 @@ namespace mcopt
         return result;
     }
 
+    inline double EventGenerator::conversionFactor() const
+    {
+        /* This factor converts number of primary electrons to signal amplitude in ADC bins.
+         * The micromegas gain gets us secondary electrons, Q_e gets charge, and the electronics gain
+         * gets voltage after the preamp. The full range of the preamp is 1 V, so assume 1 V corresponds to
+         * saturation (or 4096 ADC bins).
+         */
+        return micromegasGain * Constants::E_CHG / electronicsGain * 4096;
+    }
+
     std::map<pad_t, arma::vec> EventGenerator::makeEvent(const Track& tr) const
     {
         arma::mat trMat = tr.getMatrix();
@@ -152,6 +162,8 @@ namespace mcopt
 
         std::map<pad_t, arma::vec> result;
 
+        const double convFactor = conversionFactor();
+
         for (arma::uword i = 0; i < uncal.n_rows - 1; i++) {
             pad_t pad = pads->getPadNumberFromCoordinates(uncal(i, 0), uncal(i, 1));
             if (pad != 20000) {
@@ -164,7 +176,7 @@ namespace mcopt
                 // if (offset > 511) throw TBOverflow(std::to_string(offset));
                 if (offset > 511) continue;
 
-                arma::vec pulse = elecPulse(gain * uncal(i, 3), shape, clock, offset);
+                arma::vec pulse = elecPulse(convFactor * uncal(i, 3), shape, clock, offset);
                 padSignal += pulse;
             }
         }
@@ -249,15 +261,15 @@ namespace mcopt
 
         arma::vec hits (10240, arma::fill::zeros);
 
+        const double convFactor = conversionFactor();
+
         for (arma::uword i = 0; i < uncal.n_rows - 1; i++) {
             pad_t pad = pads->getPadNumberFromCoordinates(uncal(i, 0), uncal(i, 1));
             if (pad != 20000) {
-                hits(pad) += gain * uncal(i, 3);
+                hits(pad) += convFactor * uncal(i, 3);
             }
         }
 
         return hits;
     }
-
-
 }

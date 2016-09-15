@@ -15,7 +15,8 @@ TEST_CASE("Calculated deviations are correct", "[deviations]")
     arma::vec3 bfield {0, 0, 1};
     double ioniz = 10;
     arma::vec3 vd {0, 0, 10};
-    double gain = 1;
+    double micromegasGain = 1;
+    double electronicsGain = 120e-15;
     double tilt = 0;
     double shape = 200e-9;
     double clock = 12.5e6;
@@ -27,7 +28,7 @@ TEST_CASE("Calculated deviations are correct", "[deviations]")
     arma::Mat<mcopt::pad_t> mockLUT =
         arma::conv_to<arma::Mat<mcopt::pad_t>>::from(arma::round(arma::randu<arma::mat>(5600, 5600) * 10000));
     mcopt::PadPlane pads (mockLUT, -0.280, 0.0001, -0.280, 0.0001, 0);
-    mcopt::EventGenerator evtgen (&pads, vd, clock, shape, massNum, ioniz, gain, tilt, diffSigma);
+    mcopt::EventGenerator evtgen (&pads, vd, clock, shape, massNum, ioniz, micromegasGain, electronicsGain, tilt, diffSigma);
 
     mcopt::MCminimizer minimizer (&tracker, &evtgen);
 
@@ -98,7 +99,8 @@ TEST_CASE("Minimizer works", "[minimizer]")
     arma::vec3 bfield {0, 0, 1};
     double ioniz = 10;
     arma::vec3 vd {0, 0, 10};
-    double gain = 1;
+    double micromegasGain = 1;
+    double electronicsGain = 120e-15;
     double tilt = 0;
     double shape = 200e-9;
     double clock = 12.5e6;
@@ -113,7 +115,7 @@ TEST_CASE("Minimizer works", "[minimizer]")
     arma::Mat<mcopt::pad_t> mockLUT =
         arma::conv_to<arma::Mat<mcopt::pad_t>>::from(arma::round(arma::randu<arma::mat>(5600, 5600) * 10000));
     mcopt::PadPlane pads (mockLUT, -0.280, 0.0001, -0.280, 0.0001, 0);
-    mcopt::EventGenerator evtgen (&pads, vd, clock, shape, massNum, ioniz, gain, tilt, diffSigma);
+    mcopt::EventGenerator evtgen (&pads, vd, clock, shape, massNum, ioniz, micromegasGain, electronicsGain, tilt, diffSigma);
 
     SECTION("Minimizer doesn't throw")
     {
