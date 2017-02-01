@@ -9,6 +9,7 @@
 #include "Track.h"
 #include "EventGen.h"
 #include "MinimizerBase.h"
+#include "BeamLocationEstimator.h"
 
 namespace mcopt
 {
@@ -33,10 +34,11 @@ namespace mcopt
             : MinimizerBase(tracker, evtgen) {}
 
         static arma::mat makeParams(const arma::vec& ctr, const arma::vec& sigma, const unsigned numSets,
-                                    const arma::vec& mins, const arma::vec& maxes);
+                                    const arma::vec& mins, const arma::vec& maxes,
+                                    const BeamLocationEstimator& beamloc);
         MCminimizeResult minimize(const arma::vec& ctr0, const arma::vec& sigma0, const arma::mat& expPos,
                                   const arma::vec& expMesh, const unsigned numIters, const unsigned numPts,
-                                  const double redFactor) const;
+                                  const double redFactor, const BeamLocationEstimator& beamloc) const;
     };
 }
 

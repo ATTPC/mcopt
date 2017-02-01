@@ -56,7 +56,7 @@ endif()
 
 include_directories(include)
 
-set(MCOPT_SRC src/EventGen.cpp src/Trigger.cpp src/MinimizerBase.cpp src/MCminimizer.cpp
+set(MCOPT_SRC src/EventGen.cpp src/Trigger.cpp src/MinimizerBase.cpp src/MCminimizer.cpp src/BeamLocationEstimator.cpp
     src/Annealer.cpp src/PadPlane.cpp src/Track.cpp src/Tracker.cpp src/PadMap.cpp src/Gas.cpp)
 
 add_library(mcopt SHARED ${MCOPT_SRC})
@@ -67,13 +67,13 @@ endif()
 
 set(TEST_MCOPT_SRC test/catch_main.cpp test/test_mcopt.cpp test/test_EventGen.cpp test/test_PadPlane.cpp)
 
-add_executable(test_mcopt ${TEST_MCOPT_SRC})
-target_link_libraries(test_mcopt ${ARMADILLO_LIBRARIES} mcopt)
-if(HDF5_FOUND)
-    target_link_libraries(test_mcopt ${HDF5_CXX_LIBRARIES})
-    file(COPY "test/LUT.h5" DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-endif()
-target_compile_options(test_mcopt PUBLIC "-Wno-shadow")
+# add_executable(test_mcopt ${TEST_MCOPT_SRC})
+# target_link_libraries(test_mcopt ${ARMADILLO_LIBRARIES} mcopt)
+# if(HDF5_FOUND)
+#     target_link_libraries(test_mcopt ${HDF5_CXX_LIBRARIES})
+#     file(COPY "test/LUT.h5" DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+# endif()
+# target_compile_options(test_mcopt PUBLIC "-Wno-shadow")
 
 if(HDF5_FOUND)
     add_executable(prof_tracker EXCLUDE_FROM_ALL prof/prof_tracker.cpp prof/utils.cpp)

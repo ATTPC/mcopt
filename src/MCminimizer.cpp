@@ -3,7 +3,8 @@
 namespace mcopt
 {
     arma::mat MCminimizer::makeParams(const arma::vec& ctr, const arma::vec& sigma, const unsigned numSets,
-                                      const arma::vec& mins, const arma::vec& maxes)
+                                      const arma::vec& mins, const arma::vec& maxes,
+                                      const BeamLocationEstimator& beamloc)
     {
         const arma::uword numVars = ctr.n_rows;
         assert(sigma.n_rows == numVars);
@@ -12,17 +13,23 @@ namespace mcopt
 
         arma::mat params = arma::randu(numSets, numVars);
 
-        for (arma::uword i = 0; i < numVars; i++) {
+        // Columns are x, y, z, en, azi, pol. Clamp z, en, azi, pol to sigma, so iterate from 2 to N.
+        for (arma::uword i = 2; i < numVars; i++) {
             params.col(i) = arma::clamp(ctr(i) + (params.col(i) - 0.5) * sigma(i),
                                         mins(i), maxes(i));
         }
+
+        // Now fix x and y from z
+        params.col(0) = beamloc.findX(params.col(2));
+        params.col(1) = beamloc.findY(params.col(2));
 
         return params;
     }
 
     MCminimizeResult MCminimizer::minimize(const arma::vec& ctr0, const arma::vec& sigma0,
                                            const arma::mat& expPos, const arma::vec& expHits,
-                                           const unsigned numIters, const unsigned numPts, const double redFactor) const
+                                           const unsigned numIters, const unsigned numPts, const double redFactor,
+                                           const BeamLocationEstimator& beamloc) const
     {
         const arma::uword numVars = ctr0.n_rows;
         const arma::uword numChis = 3;
@@ -40,7 +47,7 @@ namespace mcopt
         MCminimizeResult res (numVars, numPts, numIters, numChis);
 
         for (unsigned i = 0; i < numIters; i++) {
-            arma::mat params = makeParams(ctr, sigma, numPts, mins, maxes);
+            arma::mat params = makeParams(ctr, sigma, numPts, mins, maxes, beamloc);
 
             arma::mat chis = runTracks(params, expPos, expHits);
 
