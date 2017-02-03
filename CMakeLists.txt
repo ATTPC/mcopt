@@ -57,7 +57,7 @@ endif()
 include_directories(include)
 
 set(MCOPT_SRC src/EventGen.cpp src/Trigger.cpp src/MinimizerBase.cpp src/MCminimizer.cpp src/BeamLocationEstimator.cpp
-    src/Annealer.cpp src/PadPlane.cpp src/Track.cpp src/Tracker.cpp src/PadMap.cpp src/Gas.cpp)
+    src/PadPlane.cpp src/Track.cpp src/Tracker.cpp src/PadMap.cpp src/Gas.cpp)
 
 add_library(mcopt SHARED ${MCOPT_SRC})
 target_link_libraries(mcopt ${ARMADILLO_LIBRARIES})
