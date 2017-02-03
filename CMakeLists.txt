@@ -67,13 +67,13 @@ endif()
 
 set(TEST_MCOPT_SRC test/catch_main.cpp test/test_mcopt.cpp test/test_EventGen.cpp test/test_PadPlane.cpp)
 
-# add_executable(test_mcopt ${TEST_MCOPT_SRC})
-# target_link_libraries(test_mcopt ${ARMADILLO_LIBRARIES} mcopt)
-# if(HDF5_FOUND)
-#     target_link_libraries(test_mcopt ${HDF5_CXX_LIBRARIES})
-#     file(COPY "test/LUT.h5" DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-# endif()
-# target_compile_options(test_mcopt PUBLIC "-Wno-shadow")
+add_executable(test_mcopt ${TEST_MCOPT_SRC})
+target_link_libraries(test_mcopt ${ARMADILLO_LIBRARIES} mcopt)
+if(HDF5_FOUND)
+    target_link_libraries(test_mcopt ${HDF5_CXX_LIBRARIES})
+    file(COPY "test/LUT.h5" DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+endif()
+target_compile_options(test_mcopt PUBLIC "-Wno-shadow")
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 
