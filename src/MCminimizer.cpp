@@ -28,7 +28,6 @@ namespace mcopt
 
     MCminimizeResult MCminimizer::minimize(const arma::vec& ctr0, const arma::vec& sigma0,
                                            const arma::mat& expPos, const arma::vec& expHits,
-                                           const unsigned numIters, const unsigned numPts, const double redFactor,
                                            const BeamLocationEstimator& beamloc) const
     {
         const arma::uword numVars = ctr0.n_rows;
