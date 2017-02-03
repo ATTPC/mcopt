@@ -75,16 +75,6 @@ set(TEST_MCOPT_SRC test/catch_main.cpp test/test_mcopt.cpp test/test_EventGen.cp
 # endif()
 # target_compile_options(test_mcopt PUBLIC "-Wno-shadow")
 
-if(HDF5_FOUND)
-    add_executable(prof_tracker EXCLUDE_FROM_ALL prof/prof_tracker.cpp prof/utils.cpp)
-    target_link_libraries(prof_tracker ${ARMADILLO_LIBRARIES} mcopt ${HDF5_CXX_LIBRARIES})
-
-    add_executable(prof_evtgen EXCLUDE_FROM_ALL prof/prof_evtgen.cpp prof/utils.cpp)
-    target_link_libraries(prof_evtgen ${ARMADILLO_LIBRARIES} mcopt ${HDF5_CXX_LIBRARIES})
-
-    add_custom_target(prof DEPENDS prof_tracker prof_evtgen)
-endif()
-
 set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 
 # ==============
