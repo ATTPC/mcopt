@@ -32,7 +32,7 @@ namespace mcopt
                                            const BeamLocationEstimator& beamloc) const
     {
         const arma::uword numVars = ctr0.n_rows;
-        const arma::uword numChis = 3;
+        const arma::uword numChis = Chi2Set::numChis();
 
         assert(ctr0.n_elem == sigma0.n_elem);
 
