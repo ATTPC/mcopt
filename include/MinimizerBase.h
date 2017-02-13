@@ -22,7 +22,7 @@ namespace mcopt
         double vertChi2 = 0;
 
         double sum() const { return posChi2 + enChi2 + vertChi2; }
-        constexpr size_t numChis() const { return 3; }
+        static constexpr size_t numChis() { return 3; }
         arma::rowvec asRow() const { return arma::rowvec {posChi2, enChi2, vertChi2}; }
     };
 
