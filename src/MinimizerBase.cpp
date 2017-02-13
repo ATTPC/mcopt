@@ -98,6 +98,11 @@ namespace mcopt
         return enChi2;
     }
 
+    double MinimizerBase::findVertChi2(const double x0, const double y0) const
+    {
+        return (x0*x0 + y0*y0) / vertChi2Norm;
+    }
+
     Chi2Set MinimizerBase::runTrack(const arma::vec& params, const arma::mat& expPos,
                                                      const arma::vec& expHits) const
     {
@@ -117,6 +122,9 @@ namespace mcopt
         if (enChi2Enabled) {
             chis.enChi2 = findEnChi2(simPos, simEn, expHits);
         }
+        if (vertChi2Enabled) {
+            chis.vertChi2 = findVertChi2(params(0), params(1));
+        }
 
         return chis;
     }
@@ -132,10 +140,12 @@ namespace mcopt
                 auto chiset = runTrack(p, expPos, expHits);
                 chis(j, 0) = chiset.posChi2;
                 chis(j, 1) = chiset.enChi2;
+                chis(j, 2) = chiset.vertChi2;
             }
             catch (...) {
                 chis(j, 0) = arma::datum::nan;
                 chis(j, 1) = arma::datum::nan;
+                chis(j, 2) = arma::datum::nan;
             }
         }
 
